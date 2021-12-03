@@ -1,0 +1,74 @@
+extends ../layout
+
+block content
+  .page-header(style="margin-top:1em")
+    .row
+      .col-xs-12
+        h3 Edit User: #{foundUser.email}
+          if foundUser.username
+            &nbsp;
+            i &#40; #{foundUser.username} &#41;
+
+  .page-header
+    .row
+      .col-xs-3.col-md-2
+        .thumbnail
+          img(src=foundUser.gravatarURL)
+      .col-xs-9.col-md-10
+        dl.dl-horizontal
+         dt Name:
+         if foundUser.profile.name
+           dd=foundUser.profile.name
+         else
+           dd='?'
+         dt Gender:
+         if foundUser.profile.gender
+           dd=foundUser.profile.gender
+         else
+          dd='?'
+         dt Location:
+         if foundUser.profile.location
+          dd=foundUser.profile.location
+         else
+          dd='?'
+
+  form.form-horizontal(role='form', method='POST')
+    input(type='hidden', name='_csrf', value=_csrf)
+    fieldset
+      .form-group
+        label.col-md-4.control-label(for='role') Role
+        .col-md-4
+          select#role.form-control(name='role')
+            option(value='user', selected=foundUser.role.name=='user') User
+            option(value='affiliate', selected=foundUser.role.name=='affiliate') Affiliate
+            option(value='rep', selected=foundUser.role.name=='rep') Rep
+            option(value='librarian', selected=foundUser.role.name=='librarian') Librarian
+            option(value='exporter', selected=foundUser.role.name=='exporter') Exporter
+            option(value='admin', selected=foundUser.role.name=='admin') Administrator
+
+      .form-group
+        label.col-md-4.control-label(for='store') Store
+        .col-md-4
+          select#store.form-control(name='store')
+            each thisStore in stores
+              option(selected=thisStore.selected, value=thisStore._id) #{thisStore.name} (#{thisStore.ezID})
+
+      .form-group
+        .col-md-4.col-md-offset-4
+          button.btn.btn-primary(type='submit')
+            i.fa.fa-floppy-o
+            | Save
+  .panel.panel-default
+    .panel-body
+      ul.list-unstyled
+        li A user is a user of the application. They have no administrative right.
+        li An affiliate is a user that owns a store. They can choose prices for cases and export DXF's.
+        li A rep belongs to a store and has the same privileges as affiliates, but cannot export DXF's.
+        li A librarian can add/edit shapes to the shape library. Librarians do not belong to a store.
+        li An exporter has only the permissions of a regular user, but they can also export DXF's from the app.
+        li An administrator has all access to all stores and all user files.
+
+
+
+block scripts
+  script(type='text/javascript', src='/js/store.js')

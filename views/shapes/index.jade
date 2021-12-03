@@ -1,0 +1,98 @@
+extends ../layout
+
+block content
+
+  .page-header
+    h3 Shapes
+      small &nbsp; (#{total})
+
+      //if isAdmin
+        //.form-inline.small.pull-right
+        //  .form-group
+        //    input(type='hidden', name='_csrf', value=_csrf)
+        //    a.btn.btn-sm.btn-success(href='/shapes/new') New Shape
+      form.form-inline.small.pull-right.search-form(style="margin-right: 2em")
+        .form-group.has-clear.has-feedback
+          label Search: &nbsp;
+          input.form-control.input-sm(name='search', value='#{search}')
+          span.glyphicon.glyphicon-remove.form-control-clear.form-control-feedback(style="cursor: pointer; pointer-events: all;")
+
+  if docs.length
+    table.table
+      thead
+        tr
+          th Name
+          th Manufacturer ID
+          th Category
+          th Brand
+          th Shared
+          th Verified
+          th Available
+          th
+
+      tbody
+        each shape in docs
+          tr
+            td=shape.name
+            td=shape.mfrID
+            td=shape.category ? shape.category.name : ''
+            td=shape.brand ? shape.brand.name : ''
+            td=(shape.sharedUsers && shape.sharedUsers.length) ? 'Y' : 'N'
+            td=shape.verified ? 'Y' : 'N'
+            td=shape.available ? 'Y' : 'N'
+            td
+              //if isAdmin
+              //  a.btn.btn-default(href='/shapes/edit/#{shape._id}') Edit
+
+      tfoot
+        tr
+          td.text-center(colspan=11)
+            ul.pagination(style="margin-left:-105px;")
+              li(class=page < 2 && 'disabled')
+                a(href=!!search ? '?page=1&search=#{search}' : '?page=1', aria-label='Previous')
+                  span(aria-hidden='true') &laquo;
+
+              li(class=page < 2 && 'disabled')
+                a(href=!!search ? '?page=#{page - 1}&search=#{search}' : '?page=#{page - 1}', aria-label='Previous')
+                  span(aria-hidden='true') Previous
+
+              - var menuStart = Math.max(((pages - 10) < page) ? (pages - 10) : (parseInt((page-1) / 10) * 10), 0)
+              - var menuEnd = Math.min((menuStart + 10), pages)
+              - var m = menuStart
+
+              while m++ < menuEnd
+                li(class=m === page && 'active')
+                  a(href=!!search ? '?page=#{m}&search=#{search}' : '?page=#{m}') #{m}
+
+              li(class=page === pages && 'disabled')
+                a(href=!!search ? '?page=#{page + 1}&search=#{search}' : '?page=#{page + 1}',aria-label='Next')
+                  span(aria-hidden='true') Next
+
+              li(class=page === pages && 'disabled')
+                a(href=!!search ? '?page=#{pages}&search=#{search}' : '?page=#{pages}',aria-label='Next')
+                  span(aria-hidden='true') &raquo;
+
+            h3.pull-left
+              small
+                | Page #{page} of #{pages}
+
+  else
+    p No shapes found.
+
+block scripts
+  script.
+    $('form.search-form .form-control-clear').click(function() {
+      $(this).prev('input').val(null);
+      $('ul.pagination a').attr('href', function(idx, val) {
+        return val.replace(/&search=.*/, '');
+      });
+      document.cookie = 'page=;path=/shapes;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      document.cookie = 'search=;path=/shapes;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      history.pushState({}, document.title, location.pathname);
+      location.reload();
+    });
+    $('form.search-form :input').on('change', function(){
+      document.cookie = 'search='+$(this).val().trim()+';path=/shapes';
+      document.cookie = 'page=;path=/shapes;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      $(this).parents('form').first().submit();
+    });

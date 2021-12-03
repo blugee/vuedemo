@@ -1,0 +1,94 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 Carts
+      small &nbsp; (#{total})
+
+      .form-inline.small.pull-right
+        .form-group
+          input(type='hidden', name='_csrf', value=_csrf)
+          a.btn.btn-sm.btn-info(href='/carts/new') New Cart
+      form.form-inline.small.pull-right.search-form(style="margin-right: 2em")
+        .form-group.has-clear.has-feedback
+          label Search: &nbsp;
+          input.form-control.input-sm(name='search', value='#{search}')
+          span.glyphicon.glyphicon-remove.form-control-clear.form-control-feedback(style="cursor: pointer; pointer-events: all;")
+
+  if docs.length
+    table.table
+      thead
+        tr
+          th Region
+          th Currency
+          th API URL
+          th(style="width:50px")
+          th(style="width:50px")
+
+      tbody
+        each cart in docs
+          tr
+            td=cart.region
+            td=cart.currency
+            td=cart.baseURL
+            td
+              a.btn.btn-sm.btn-success.pull-right(href='/carts/#{cart.id}/edit') Edit
+            td
+              a(href= '/carts/#{cart.id}', data-method='delete', data-message='This cart has been has been deleted.', data-message-error='Unable to delete this cart at this time.' data-csrf=_csrf).btn.btn-danger Delete
+
+      tfoot
+      tr
+        td.text-center(colspan=11)
+          ul.pagination(style="margin-left:-105px;")
+            li(class=page < 2 && 'disabled')
+              a(href=!!search ? '?page=1&search=#{search}' : '?page=1', aria-label='Previous')
+                span(aria-hidden='true') &laquo;
+
+            li(class=page < 2 && 'disabled')
+              a(href=!!search ? '?page=#{page - 1}&search=#{search}' : '?page=#{page - 1}', aria-label='Previous')
+                span(aria-hidden='true') Previous
+
+            - var menuStart = Math.max(((pages - 10) < page) ? (pages - 10) : (parseInt((page-1) / 10) * 10), 0)
+            - var menuEnd = Math.min((menuStart + 10), pages)
+            - var m = menuStart
+
+            while m++ < menuEnd
+              li(class=m === page && 'active')
+                a(href=!!search ? '?page=#{m}&search=#{search}' : '?page=#{m}') #{m}
+
+            li(class=page === pages && 'disabled')
+              a(href=!!search ? '?page=#{page + 1}&search=#{search}' : '?page=#{page + 1}',aria-label='Next')
+                span(aria-hidden='true') Next
+
+            li(class=page === pages && 'disabled')
+              a(href=!!search ? '?page=#{pages}&search=#{search}' : '?page=#{pages}',aria-label='Next')
+                span(aria-hidden='true') &raquo;
+
+          h3.pull-left
+            small
+              | Page #{page} of #{pages}
+
+  else
+    p No carts found.
+
+block scripts
+  script.
+    $('form.search-form .form-control-clear').click(function() {
+      $(this).prev('input').val(null);
+      $('ul.pagination a').attr('href', function(idx, val) {
+        return val.replace(/&search=.*/, '');
+      });
+      document.cookie = 'page=;path=/carts;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      document.cookie = 'search=;path=/carts;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      history.pushState({}, document.title, location.pathname);
+      location.reload();
+    });
+    $('form.search-form :input').on('change', function(){
+      document.cookie = 'search='+$(this).val().trim()+';path=/carts';
+      document.cookie = 'page=;path=/carts;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      $(this).parents('form').first().submit();
+    });
+  style.
+    .disabled a, .active a {
+      pointer-events: none;
+    }

@@ -1,0 +1,144 @@
+image: "joelabair/f30-nodejs-dev:mcbv2-deploy"
+
+stages:
+  - review
+  - deploy
+
+
+staging:
+  stage: deploy
+  tags:
+    - docker
+    - linux
+  script:
+    - echo "deploying to staging"
+    - git checkout master
+    - ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa && rm -f ~/.ssh/id_rsa.pub && cat .staging-key.pem > ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa && ssh-keyscan git.evennode.com > ~/.ssh/known_hosts
+    - echo -e "Host git.evennode.com\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config && chmod go-r ~/.ssh/config
+    - export NODE_ENV="development" && export DEBUG=none && export npm_config_loglevel=silent && npm i && npm run production
+    - git config user.email "joel.a.bair@gmail.com" && git add --force public/dist/*/* && git add --force public/css/*.css
+    - git status && git commit -am "Staging build recompiled for deployment." || true
+    - git remote add evennode git@git.evennode.com:c39a992a9f10ac4b193b1b7f7920e300.git
+    - git push -u -f evennode master
+  environment:
+    name: staging
+    url: https://app-stage.mycasebuilder.com/
+  only:
+    - master
+
+
+production:
+  stage: deploy
+  tags:
+    - docker
+    - linux
+  script:
+    - echo "deploying to production west"
+    - git checkout deploy
+    - ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa && rm -f ~/.ssh/id_rsa.pub && cat .production-key.pem > ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa && ssh-keyscan git.evennode.com > ~/.ssh/known_hosts
+    - echo -e "Host git.evennode.com\n\tIdentityFile ~/.ssh/id_rsa\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config && chmod go-r ~/.ssh/config
+    - export NODE_ENV="development" && export DEBUG=none && export npm_config_loglevel=silent && npm i && npm run production
+    - git config user.email "joel.a.bair@gmail.com" && git add --force public/dist/*/* && git add --force public/css/*.css
+    - git status && git commit -am "Production build recompiled for deployment." || true
+    - git remote add evennode git@git.evennode.com:0ff3fe4f5b75e5b2d4b2fa514e28b033.git
+    - git push -f -u evennode deploy:master
+  environment:
+    name: production-west
+    url: https://app.mycasebuilder.com/
+  only:
+    - deploy
+
+
+deploy_prod:
+  stage: deploy
+  script:
+    - echo "Manually deployed to production server"
+  environment:
+    name: production
+    url: https://app.mycasebuilder.com
+  variables:
+    GIT_STRATEGY: none
+  when: manual
+  only:
+  - deploy
+
+
+review:
+  stage: review
+  script:
+    - CF_PIPELINE="MCB-APP/MCB-RUNNER"
+    - CF_TRIGGER="post-commit"
+    - codefresh auth create-context --api-key ${CF_TOKEN}
+    - codefresh run ${CF_PIPELINE} --trigger ${CF_TRIGGER} -b ${CI_COMMIT_BRANCH} | tee /tmp/codefresh.out
+    - DYNAMIC_ENVIRONMENT_URL=$(grep 'Application URL:' /tmp/codefresh.out | awk '{print $3}')          # In script, get the environment URL.
+    - echo "DYNAMIC_ENVIRONMENT_URL=$DYNAMIC_ENVIRONMENT_URL" | tee deploy.env                          # Add the value to a dotenv file.
+  artifacts:
+    reports:
+      dotenv: deploy.env                                                                                # Report back dotenv file to rails.
+  variables:
+    GIT_STRATEGY: none
+  environment:
+    name: review/$CI_COMMIT_BRANCH
+    url: $DYNAMIC_ENVIRONMENT_URL
+    on_stop: stop_review
+  tags:
+    - docker
+    - linux
+  only:
+    - branches
+  except:
+    - master
+    - deploy
+
+
+stop_review:
+  stage: review
+  script:
+    - codefresh auth create-context --api-key ${CF_TOKEN}
+    - COMPOSITION_ID=$(codefresh get environment ${CI_COMMIT_BRANCH} -o id)
+    - codefresh delete environment ${COMPOSITION_ID}
+  variables:
+    GIT_STRATEGY: none
+  when: manual
+  environment:
+    name: review/$CI_COMMIT_BRANCH
+    action: stop
+    auto_stop_in: 8 hours
+  tags:
+    - docker
+    - linux
+  only:
+    - branches
+  except:
+    - master
+    - deploy
+
+
+deploy_review:
+  stage: review
+  script:
+    - CF_PIPELINE="MCB-APP/MCB-RUNNER"
+    - CF_TRIGGER="post-commit"
+    - codefresh auth create-context --api-key ${CF_TOKEN}
+    - codefresh run ${CF_PIPELINE} --trigger ${CF_TRIGGER} -b ${CI_COMMIT_BRANCH} | tee /tmp/codefresh.out
+    - DYNAMIC_ENVIRONMENT_URL=$(grep 'Application URL:' /tmp/codefresh.out | awk '{print $3}')          # In script, get the environment URL.
+    - echo "DYNAMIC_ENVIRONMENT_URL=$DYNAMIC_ENVIRONMENT_URL" | tee deploy.env                          # Add the value to a dotenv file.
+  artifacts:
+    reports:
+      dotenv: deploy.env                                                                                # Report back dotenv file to rails.
+  environment:
+    name: review/$CI_COMMIT_BRANCH
+    url: $DYNAMIC_ENVIRONMENT_URL
+  variables:
+    GIT_STRATEGY: none
+  when: manual
+  tags:
+    - docker
+    - linux
+  only:
+    - branches
+  except:
+    - master
+    - deploy

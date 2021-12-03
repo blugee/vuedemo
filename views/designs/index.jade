@@ -1,0 +1,266 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 Designs
+      small &nbsp; (#{total})
+
+      form.form-inline.small.pull-right(action="/export/designs", method="post")
+        .form-group.export
+          input(type='hidden', name='_csrf', value=_csrf)
+          button.btn.btn-sm.btn-default(data-loading-text="exporting...", disabled) Export CSV
+
+      form.form-inline.small.pull-right#filters(style="margin-right:1em")
+        .form-group.has-clear.has-feedback.date-range(style="margin-right:30px")
+          label Date Range: &nbsp;
+          input.form-control.input-sm(type="text", value="#{dateRange}", name="dateRange")
+          span.glyphicon.glyphicon-remove.form-control-clear.form-control-feedback(style="cursor: pointer; pointer-events: all;")
+
+        .form-group.lock(style="margin-right:30px")
+          label Locked: &nbsp;
+          .checkbox
+            input.form-control.input-sm(name='locked', type='checkbox', style="margin-top:0px", checked=!!locked)
+
+        .form-group.has-clear.has-feedback.search(style="margin-right:5px")
+          label Search: &nbsp;
+          input.form-control.input-sm(name='search', value='#{search}')
+          span.glyphicon.glyphicon-remove.form-control-clear.form-control-feedback(style="cursor: pointer; pointer-events: all;")
+
+        .form-group
+          select.form-control.input-sm(name="smode")
+            option(value="1", selected=smode==1) name / fileID
+            option(value="2", selected=smode==2) owner / email
+
+  if docs.length
+     table.table
+      thead
+        tr
+          th fileID
+          th Name
+          th Case Name
+          th Size
+          th # Shapes
+          th # Unique Depths
+          th # Trays
+          th
+
+      tbody
+        each revision in docs
+
+          - var design = revision.design || {}
+          - var layers = (revision.layers || []).filter(function(l){return l.isLid !== 'true'})
+          - var kase = revision.isCustom ? revision.customSize : revision.case
+          - var dimensions = [kase.length, kase.width, kase.baseDepth].filter(function(v) { return !!v }).join(' x ')
+          - if (revision.isCustom) kase.name = "CUSTOM-FOAM-ONLY"
+
+          tr(class='#{!!design.isTemplate ? "info template" : ""}')
+            td(class=!revision.id && 'disabled')
+              a.design-link(href= '/app?design=#{design.uniqueID}')
+                | #{revision.fileID}
+            td(class=!revision.id && 'disabled')
+              | #{revision.name}
+            td
+              | #{kase.name || kase.mcbid || ''}
+            td
+              | #{dimensions}
+            td= revision.shapes
+            td= revision.uniqueDepths
+            td
+              | #{layers.length}
+
+            td.actions(class=!revision.id && 'disabled')
+              a(href= '/designs/#{revision.id}').btn.btn-success Edit
+              a(href= '/designs/#{revision.id}/transfer').btn.btn-warning Transfer
+
+      - var QS = []
+      - if (!!search) QS.push('search='+search)
+      - if (locked==="true"||locked==="on") QS.push('locked='+locked)
+      - if (!!dateRange) QS.push('dateRange='+dateRange)
+      - QS = QS.join('&')
+
+      tfoot
+        tr
+          td.text-center(colspan=11)
+            ul.pagination(style="margin-left:-105px;")
+              li(class=page < 2 && 'disabled')
+                a(href=!!QS ? '?page=1&#{QS}' : '?page=1', aria-label='Previous')
+                  span(aria-hidden='true') &laquo;
+
+              li(class=page < 2 && 'disabled')
+                a(href=!!QS ? '?page=#{page - 1}&#{QS}' : '?page=#{page - 1}', aria-label='Previous')
+                  span(aria-hidden='true') Previous
+
+              - var menuStart = Math.max(((pages - 10) < page) ? (pages - 10) : (parseInt((page-1) / 10) * 10), 0)
+              - var menuEnd = Math.min((menuStart + 10), pages)
+              - var m = menuStart
+
+              while m++ < menuEnd
+                li(class=m === page && 'active')
+                  a(href=!!QS ? '?page=#{m}&#{QS}' : '?page=#{m}') #{m}
+
+              li(class=page === pages && 'disabled')
+                a(href=!!QS ? '?page=#{page + 1}&#{QS}' : '?page=#{page + 1}',aria-label='Next')
+                  span(aria-hidden='true') Next
+
+              li(class=page === pages && 'disabled')
+                a(href=!!QS ? '?page=#{pages}&#{QS}' : '?page=#{pages}',aria-label='Next')
+                  span(aria-hidden='true') &raquo;
+
+            h3.pull-left
+              small
+                | Page #{page} of #{pages}
+
+  else
+    p No revisions found.
+
+block headScripts
+  script(src="/js/lib/moment.js", type="text/javascript")
+  script(src="/js/lib/jquery.form.min.js", type="text/javascript")
+  script(src="/js/lib/jquery.daterangepicker.min.js", type="text/javascript")
+  link(href="/css/lib/daterangepicker.min.css",  rel="stylesheet", type="text/css")
+
+block scripts
+  script.
+    var $export = $('.export>button');
+    var $dateRange = $('#filters .date-range input[name="dateRange"]');
+    var $locked = $('#filters .lock>.checkbox>input');
+
+    if ((!!$dateRange.val().trim() || !!$locked.is(':checked')) && !!#{docs.length}) {
+      $export.addClass('btn-primary').removeClass('btn-default').removeAttr('disabled');
+    } else {
+      $export.removeClass('btn-primary').addClass('btn-default').attr('disabled', 'disabled');
+    }
+
+    var search = location.search;
+
+    $dateRange.dateRangePicker({
+      autoClose: true
+    });
+
+    $dateRange.bind('datepicker-change', function() {
+      if (!!$(this).val().trim() && !!#{docs.length}) {
+        $export.addClass('btn-primary').removeClass('btn-default').removeAttr('disabled');
+      } else {
+        $export.removeClass('btn-primary').addClass('btn-default').attr('disabled', 'disabled');
+      }
+      document.cookie = 'dateRange='+$(this).val().trim()+';path=/designs';
+      document.cookie = 'page=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      history.pushState({}, document.title, location.pathname);
+
+      $(this).parents('form').first().submit();
+    });
+
+    $('#filters .lock>.checkbox>input').on('change', function() {
+      if (!!$(this).is(':checked')) {
+        document.cookie = 'locked=on;path=/designs';
+      } else {
+        document.cookie = 'locked=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      }
+      document.cookie = 'page=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      history.pushState({}, document.title, location.pathname);
+      $(this).parents('form').first().submit();
+    });
+
+    $('#filters .date-range .form-control-clear').click(function() {
+      $dateRange.data('dateRangePicker').clear();
+      $dateRange.trigger('datepicker-change');
+    });
+
+    $('#filters .search .form-control-clear').click(function() {
+      $(this).prev('input').val(null);
+      $('ul.pagination a').attr('href', function(idx, val) {
+        return val.replace(/&search=.*/, '');
+      });
+      document.cookie = 'page=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      document.cookie = 'smode=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = 'search=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      history.pushState({}, document.title, location.pathname);
+      location.reload();
+    });
+
+    $('#filters .search input').on('change', function() {
+      document.cookie = 'search='+$(this).val().trim()+';path=/designs';
+      document.cookie = 'page=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      $(this).parents('form').first().submit();
+    });
+
+    $('#filters select[name="smode"]').on('change', function() {
+      document.cookie = 'smode='+$(this).val().trim()+';path=/designs';
+      document.cookie = 'page=;path=/designs;expires=Thu, 01 Jan 1970 00:00:01 GMT';
+      $(this).parents('form').first().submit();
+    });
+
+    $('form[action="/export/designs"]').on('submit', function(e) {
+      var $filtersForm = $(this).next('form#filters');
+      var $export = $('button', this);
+
+      $export.button('loading');
+
+      var options = {
+        resetForm: true,
+        data: {},
+        xhrFields: {
+            responseType: 'blob'
+        },
+        success: function (data, status, xhr) {
+          var filename = "";
+          var disposition = xhr.getResponseHeader('Content-Disposition');
+          if (disposition && disposition.indexOf('attachment') !== -1) {
+              var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+              var matches = filenameRegex.exec(disposition);
+              if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
+          }
+
+          var type = xhr.getResponseHeader('Content-Type');
+          var blob = new Blob([data], { type: type });
+
+          if (typeof window.navigator.msSaveBlob !== 'undefined') {
+              // IE workaround for "HTML7007: One or more blob URLs were revoked by closing the blob for which they were created.
+              // These URLs will no longer resolve as the data backing the URL has been freed."
+              window.navigator.msSaveBlob(blob, filename);
+          } else {
+              var URL = window.URL || window.webkitURL;
+              var downloadUrl = URL.createObjectURL(blob);
+
+              if (filename) {
+                  // use HTML5 a[download] attribute to specify filename
+                  var a = document.createElement("a");
+                  // safari doesn't support this yet
+                  if (typeof a.download === 'undefined') {
+                      window.location = downloadUrl;
+                  } else {
+                      a.href = downloadUrl;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                  }
+              } else {
+                  window.location = downloadUrl;
+              }
+              setTimeout(function () {
+                URL.revokeObjectURL(downloadUrl);
+              }, 150); // cleanup
+          }
+          setTimeout(function () {
+            $export.button('reset');
+          }, 800);
+        },
+        error: function() {
+          $export.button('reset');
+        }
+      };
+
+      $filtersForm.serializeArray().forEach(function(ele) {
+        options.data[ele.name] = ele.value;
+      });
+
+
+      e.preventDefault();
+      $(this).ajaxSubmit(options);
+      return false;
+    });
+
+  style.
+    .disabled a, .active a {
+      pointer-events: none;
+    }

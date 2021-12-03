@@ -1,0 +1,2589 @@
+extends ../appLayout
+
+block nav
+  .navbar.navbar-default.navbar-fixed-top#nav(v-cloak)
+    .container(style='width: 100%; margin-right: 0px; margin-left: 0px;')
+      .navbar-header
+        button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
+          span.sr-only Toggle navigation
+          span.icon-bar
+          span.icon-bar
+          span.icon-bar
+        a.navbar-brand(href='#', @click.prevent='hamburgerClicked', v-show='sharedState.currentUser')
+          i.fa.fa-bars
+      .collapse.navbar-collapse
+        //- Are not signed in
+        ul.nav.navbar-nav.navbar-left.unsigned-in(v-show='sharedState.currentUser.anon')
+          li
+            a.btn.btn-default(href='#', @click='saveYourDesign') {{ sharedState.saveyourdesignLabel }}
+
+        //- Are signed in
+        ul.nav.navbar-nav.navbar-left.signed-in-nav
+
+         
+         
+
+       
+
+      
+          
+          li.center-logo
+            if store
+              a(href='#{store.logoURL ? store.logoURL : "https://www.mycasebuilder.com"}')
+                if store.hasCustomLogo
+                  img(src='#{store.logoImg}', style='height: auto; width: #{store.logoImgWidth || "60px"}; margin-left: -100%;')
+                else
+                  img(src='/imgs/MCB_Logo_RGB.svg', style='height: 58px; width: auto; margin-left: -100%;')
+            else
+              a(href='https://www.mycasebuilder.com')
+                img(src='/imgs/MCB_Logo_RGB.svg', style='height: 58px; width: auto; margin-left: -100%;')
+
+        ul.nav.navbar-nav.navbar-right.unsigned-in(v-if='sharedState.currentUser.anon')
+          li
+            a#login-modal-open-btn(href='#', @click='loginClicked', data-cypress='user-login') {{ sharedState.loginLabel }}
+          li
+            a(href='#', @click='registerClicked', data-cypress='account-register') {{ sharedState.createaccountLabel }}
+
+        ul.nav.navbar-nav.navbar-right.user-status(v-if='!sharedState.currentUser.anon')
+          li(style='display:none')
+            a#downloadDXFZip.z-btn.btn.btn-default(:href='sharedState.dxfData', :download='sharedState.currentDesign.currentRev.fileID + ".zip"', v-el:dxf-download)
+          li(style='display:none')
+            a#downloadPDF.z-btn.btn.btn-default(:href='sharedState.pdfData', :download='sharedState.currentDesign.currentRev.fileID + ".pdf"', v-el:pdf-download)
+          li(v-if='sharedState.currentUser.isAdmin && sharedState.currentDesign.currentRev.publicDesign && sharedState.currentDesign.currentRev.publicDesign.isCandidate')
+            a.z-btn.btn.btn-default#public-design-status-btn(href='#', @click='openPublicDesignStatus()')
+              | Public Design Status
+         
+          li.dropdown.unimplemented
+            a.btn.btn-default.dropdown-toggle(href='#', data-toggle='dropdown', aria-expanded='false')
+              | Share
+              i.caret
+            ul.dropdown-menu
+              li
+                div.shareable-area
+                  h4
+                    | Sharing
+                  p
+                    | Sharing allows you to design and chat with others in real time.
+                  div.checkbox
+                    label(@click.stop)
+                      input(type='checkbox', @change.stop='updateSharable', v-model='sharedState.currentDesign.shareable')
+                      | Shareable Design
+                  div.shareable-link-area(v-show='sharedState.currentDesign.shareable')
+                    label(for='shareable-link')
+                      | Shareable Link
+                      a(href='#', @click.stop='copyText') copy
+                    input#shareable-link.form-control(v-model='shareableLink', readonly='readonly', @click.stop='selectShareableLink')
+                    p Give this link to someone you want to collaborate with.
+
+          li.dropdown(style="height:48px")
+            a.dropdown-toggle(href='#', data-toggle='dropdown', aria-expanded='false', data-cypress='app-user-menu')
+              img(:src='sharedState.currentUser.gravatarURL')
+              i.caret
+            ul.dropdown-menu
+              li
+                a(href='#my-account', onclick="javascript:mcb.ui.modals.accountProfile.vue.toggle(); return false;", data-cypress='my-account') {{ sharedState.myAccountLabel }}
+              li.divider
+              li
+                a(href='/app/orders', data-cypress='my-orders') {{sharedState.myOrders}}
+              li.divider
+              li
+                a(href='#change-password', onclick="javascript:mcb.ui.modals.changePassword.vue.toggle(); return false;", data-cypress='change-password') {{ sharedState.changePasswordLabel }}
+              li.divider
+              li
+                a(href='#', @click='logout', data-cypress='logout') {{ sharedState.logoutLabel }}
+          li(v-if='showNewShoppingCart && sharedState.cartItems.length')
+            a#open-cart(href='#', @click='openCart()')
+              i.fa.fa-shopping-cart
+              span {{sharedState.openCartLabel}} ({{ sharedState.cartItems.length }})
+         
+          li(v-if='!showNewShoppingCart')
+            a#order(href='#', @click='onNumberChange')
+              i.fa.fa-shopping-cart
+              span {{ sharedState.orderLabel }}
+
+  #quick-view-properties(v-cloak)
+    span
+      span {{privateState.prop1}}
+      span(v-show='privateState.prop1') :
+      span {{privateState.val1}}
+      span.divider
+      span {{privateState.prop2}}
+      span(v-show='privateState.prop2') :
+      span {{privateState.val2}}
+
+  #hamburger(v-cloak, v-show='sharedState.showHamburger')
+    h3
+      | {{sharedState.projectsLabel}}
+
+    ul.list-unstyled.list-inline.new-projects-list
+      li
+        a.btn.btn-default.btn-xs.new-file#new-project-based-on-case(href='#', @click='newDesign("switch-case")')
+          | {{sharedState.newProjectbasedoncase}}
+      li
+        a.btn.btn-default.btn-xs.new-file(href='#{store.logoURL ? store.logoURL.replace(/(.+:\/\/[^\/]+)(.*)$/, "$1") : "https://www.mycasebuilder.com"}/customfoam', data-metadata="#{store.logoURL}")
+          | {{sharedState.newProjectbasedoncustomsize}}
+      li
+        a.btn.btn-default.btn-xs.new-file(href='/app/orders')
+          | {{sharedState.myOrders}}
+    a.close(href='#', v-show='!sharedState.loginHamburgerMode', @click='closeHamburger')
+      i.fa.fa-times
+    ul.sub-hamburger
+      li.message(v-show='!sharedState.files.length && !sharedState.loadingFiles')
+        em
+          | {{sharedState.noProjectsyet}}
+      li.message(v-show='sharedState.loadingFiles')
+        em
+          | {{sharedState.loadingYourprojects}}  
+      li.prevs-search(v-show='sharedState.files.length && !sharedState.loadingFiles')
+        input(type='search', placeholder='{{sharedState.searchLabel}}', class='form-control', v-model='privateState.search', @keyUp='searchForFile | debounce 400', autocomplete="off")
+      li.prevs-container(v-show='!sharedState.loadingFiles')
+        ul.prevs(@scroll='onScrollDesignResults($event)')
+          li.prev(v-for="file in sharedState.files | filterBy privateState.search in 'name'", v-if="!!file.currentRev", @click.prevent='openFile(file, $event)')
+            .row
+              .col-xs-12(style="z-index:999")
+                .pull-right
+                  a(href='#', @click.stop.prevent='makeUnlockedCopy(file, $event)', data-toggle="tooltip", data-container="body", data-placement='bottom', :data-original-title='sharedState.makeUnlockedCopyTooltip')
+                    small
+                      i.fa.fa-clone
+                  a(href='#', @click.stop.prevent='removeDesign(file, $event)', data-toggle='tooltip', data-container="body", data-placement='bottom', :data-original-title='sharedState.deleteProjectTooltip')
+                    small
+                      i.fa.fa-trash-o
+            .row.design-preview
+              .col-xs-12
+                img(:src='file.currentRev.snapshot ? file.currentRev.snapshot : "/imgs/default.case.preview.png"')
+            .filename
+              span.text-ellipsis
+                | {{file.name}}
+            .revision-name(v-if='file.revisions.length === 1')
+              span.text-ellipsis
+                | {{file.revisions[0].name}}
+              | ({{file.revisions[0].fileID}})
+            select.file-id.form-control.input-sm(v-else, @change='selectedRevisionChange(file, $event)', @click.stop)
+              option(:value='rev.fileID' v-for='rev in file.revisions' selected='{{rev.fileID === file.selectedRevID}}')
+                | {{rev.name}} ({{rev.fileID}})
+            .case-name
+              | {{file.currentRev.case ? file.currentRev.case.name : 'Custom'}}
+            .locked.pull-right
+              i.fa(:class='{"fa-lock":file.locked}')
+            .edit-info
+              | Edited {{file.updatedAt | date '%B %d, %Y'}}
+            .open.btn.btn-default.col-sm-8.col-sm-offset-2.open-this-project(style='margin-top:1rem;')
+              | {{sharedState.openThisproject}}
+      li.prevs-loading-spinner(v-show='sharedState.loadingMoreFiles')
+        p.text-center
+          span.fa.fa-spinner.fa-spin.fa-3x
+
+  #properties(v-cloak, :class='{"docked":sharedState.propertiesDocked}')
+    .header
+      input.form-control.input-xs.input-full(v-if='privateState.isSingleGroup || privateState.isSingleShape', @blur='propChange("name", $event)', maxlength='50', @keyup.13='propChange("name", $event)', v-model="privateState.name", data-prop='name', placeholder='Unnamed Shape', :disabled='privateState.locked', data-toggle='tooltip', data-placement='left', data-container='body', data-html='true', :data-original-title='sharedState.editShapeNameTooltip')
+    .header
+      span(v-show='!sharedState.editMode', @click='menuClicked("tool",true)')
+        | {{ privateState.length | fixed numberOfDecimals }}{{sharedState.unitMark}} x {{ privateState.width | fixed numberOfDecimals }}{{sharedState.unitMark}} x {{ privateState.depth | fixed numberOfDecimals }}{{sharedState.unitMark}}
+      a.header-button(href='#', data-toggle='tooltip', data-placement='bottom', title='{{sharedState.dockUndockPopertiesPanel}}', :class='{"docked":sharedState.propertiesDocked}', @click='toggleDock')
+
+    // display hack:
+    p(v-show='sharedState.editMode')
+
+    ul.properties(v-show='!sharedState.editMode')
+      li.button(@click='menuClicked("clone",false)')
+        | {{ sharedState.cloneLabel }}
+      li.button.button-dropdown(@click='menuClicked("tool",true)', :class='{"active":privateState.isToolsWindow}')
+        | {{ sharedState.toolsLabel }}
+      li.button.button-dropdown(@click='menuClicked("align",true)', :class='{"active":privateState.isAlignWindow}')
+        | {{ sharedState.alignLabel }}
+      li.button(@click='menuClicked("delete",false)')
+        | {{ sharedState.deleteLabel }}
+    .secondary-properties(v-show='privateState.isSecondary')
+      #tools-window.submenu(v-show='privateState.isToolsWindow')
+
+        h3(v-show='privateState.isMultiShape || privateState.isMultiShapePlus') {{ sharedState.groupHeaderlabel }}
+        ul.secondary-buttons(v-show='privateState.isMultiShape || privateState.isMultiShapePlus')
+          li.button(@click='menuClicked("group",false, "tool")')
+            | {{ sharedState.groupLabel }}
+          li.button.button-tiny(@click='menuClicked("ungroup",false, "tool")')
+            | {{ sharedState.ungroupLabel }}
+          li.button(v-show='sharedState.canMergeSelection' @click='menuClicked("merge",false, "tool")')
+            | {{ sharedState.mergeSelectionLabel }}
+
+        h3(v-show='!sharedState.editMode && !privateState.isFoamDepthWarning') {{ sharedState.toolsHeaderlabel }}
+        ul.secondary-buttons
+          li.button(@click='menuClicked("lock",false, "tool")', v-show='!sharedState.editMode')
+            | {{privateState.lockedText}}
+          li.button(v-show='privateState.isSingleShape && !privateState.fingerNotching && (privateState.isPolygon || privateState.isRect || privateState.isCircle)', @click='menuClicked("split", false, "tool")', :class='{"active":privateState.splitShaping,"multi-line": !sharedState.editMode}')
+            span(v-if='!privateState.splitShaping')
+              | {{sharedState.splitShapelabel}}
+            span(v-else)
+              | {{sharedState.cancelSplitshapelabel}}
+
+          li.button(v-show='privateState.isSingleShape && !privateState.splitShaping', @click='menuClicked("fingernotch", false, "tool")', :class='{"active":privateState.fingerNotching,"multi-line": !sharedState.editMode}')
+            span(v-if='!privateState.fingerNotching') {{ sharedState.fingerNotchLabel }}
+            span(v-else) {{sharedState.doneLabel}}
+
+          li.button(v-show='privateState.isPolygon && privateState.isSingle && !sharedState.editMode', @click='menuClicked("editPolygon", false, "tool")')
+            | {{ sharedState.editLabel }}
+        h3(v-show='!sharedState.editMode') {{ sharedState.privateLibrarylabel }}
+        ul.secondary-buttons(v-show='!sharedState.editMode')
+          li.button.multi-line(v-if='!privateState.addingPrivateShape', @click='toggleAddPrivateShapeForm')
+            | {{ sharedState.addtolibraryLabel }}
+        h3(v-show='privateState.addingPrivateShape') {{sharedState.addPrivateshapelabel}}
+        div.form-group(v-show='privateState.addingPrivateShape')
+          p
+            input.form-control(type='text', v-model='privateState.newShape.name', placeholder='{{sharedState.shapeNamelabel}}')
+          p
+            textarea.form-control(v-model='privateState.newShape.desc', placeholder='{{sharedState.shapeDescriptionlabel}}')
+          p.btn.btn-primary(@click='savePrivateShape')
+            | {{sharedState.saveShapelabel}}
+          p.btn.btn-default(@click='toggleAddPrivateShapeForm')
+            | {{sharedState.cancelLabel}}
+        h3(v-show='!sharedState.editMode && privateState.canFlipOrMirror') {{ sharedState.flipmirrorHeaderlabel }}
+        ul.secondary-buttons(v-show='!sharedState.editMode && privateState.canFlipOrMirror')
+          li.button(@click='flipClicked', data-toggle='tooltip', data-placement='left', data-container='body', data-html='true', :data-original-title='translateTooltip(sharedState.flipTooltip,"flip_tooltip.gif")')
+            | {{ sharedState.flipLabel }}
+          li.button(@click='mirrorClicked', data-toggle='tooltip', data-placement='left', data-container='body', data-html='true', :data-original-title='translateTooltip(sharedState.mirrorTooltip,"mirror_tooltip.gif")')
+            | {{ sharedState.mirrorLabel }}
+        h3(v-show='privateState.isFoamDepthWarning') {{sharedState.basedepthwarningLabel}}
+        div.secondary-form(v-show='privateState.isFoamDepthWarning')
+          p {{sharedState.cutoutWillexceedbasedepth}}
+          p {{sharedState.howMuchspaceatbottom}}
+          ul.list-unstyled
+            li
+              a(href='#', @click='cutThroughFoamThisMuch("1/2")')
+                span(v-if="sharedState.currentUnit === 'mm'")
+                  | 13mm {{sharedState.ofFoam}}
+                span(v-else)
+                  | 1/2&Prime; {{sharedState.ofFoam}}
+            li
+              a(href='#', @click='cutThroughFoamThisMuch("1/4")')
+                span(v-if="sharedState.currentUnit === 'mm'")
+                  | 6mm {{sharedState.ofFoam}}
+                span(v-else)
+                  | 1/4&Prime; {{sharedState.ofFoam}}
+            li
+              a(href='#', @click='cutThroughFoamThisMuch("all")') {{sharedState.cutCompletelythroughfoam}}
+
+        h3.sub-header(v-show='!sharedState.editMode && !privateState.isFoamDepthWarning') {{ sharedState.positionHeaderlabel }}
+          a.header-button(href='#', data-toggle='tooltip', data-placement='bottom', title='{{sharedState.sendToBackPopertiesPanel}}', class='back', @click='sendShapeToBack', v-show="privateState.showSendToBackButton")
+        div.secondary-form(v-show='!sharedState.editMode && !privateState.isFoamDepthWarning')
+          label(:class="{'has-error': privateState.lengthError, 'has-warning': privateState.lengthWarning}")
+            span {{ sharedState.lengthLabel }}
+            input.form-control.input-xs(
+              v-el:length-input,
+              @keyup='propChange("width", $event, true)',
+              @keyup.stop.enter='filterChange("width", $event)',
+              @blur.stop='filterChange("width", $event)',
+              v-model='privateState.length',
+              number,
+              data-prop='width',
+              placeholder='Length',
+              :disabled='privateState.locked || privateState.isOverallMultipleShapes',
+              data-toggle="tooltip",
+              data-placement="bottom",
+              v-limit-numeric
+            )
+          label(:class="{'has-error': privateState.widthError, 'has-warning': privateState.widthWarning}")
+            span {{ sharedState.widthLabel }}
+            input.form-control.input-xs(
+               v-el:width-input,
+              @keyup='propChange("height", $event, true)',
+              @keyup.stop.enter='filterChange("height", $event)',
+              @blur.stop='filterChange("height", $event)',
+              v-model='privateState.width',
+              number,
+              data-prop='height',
+              placeholder='Width',
+              :disabled='privateState.locked || privateState.isOverallMultipleShapes',
+              data-toggle="tooltip",
+              data-placement="bottom",
+              v-limit-numeric
+            )
+          label
+            span {{ sharedState.depthLabel }}
+            input.form-control.input-xs(
+              v-el:depth-input,
+              @keyup='propChange("depth", $event, true)',
+              @keyup.stop.enter='filterChange("depth", $event)',
+              @blur.stop='filterChange("depth", $event, false, true)',
+              @click='onClickDepthPreCheckSetFlag($event)'
+              v-model='privateState.depth | fixed numberOfDecimals',
+              data-prop='depth',
+              placeholder='Depth',
+              :disabled="privateState.locked || (privateState.depth == 'multiple' && !sharedState.currentUser.isAdmin)",
+              data-toggle="tooltip",
+              data-placement="bottom",
+              :class="{'tooltip-error': privateState.depthError}",
+              v-limit-numeric
+            )
+        div.secondary-form(v-show='!sharedState.editMode && !privateState.isFoamDepthWarning')
+          label
+            span {{ sharedState.xLabel }}
+            input.form-control.input-xs(@blur='propChange("x", $event)', @keyup.13='blurProp($event)', v-model='privateState.x | fixed numberOfDecimals',data-prop='x', placeholder='X', :disabled='privateState.locked', data-toggle="tooltip", data-placement="bottom", title='', v-limit-numeric)
+          label
+            span {{ sharedState.yLabel }}
+            input.form-control.input-xs(@blur='propChange("y", $event)', @keyup.13='blurProp($event)', v-model='privateState.y | fixed numberOfDecimals',data-prop='y', placeholder='Y', :disabled='privateState.locked', data-toggle="tooltip", data-placement="bottom", title='', v-limit-numeric)
+          label
+            span {{ sharedState.angleLabel }}
+            input.form-control.input-xs(@blur='propChange("rotation", $event)', @keyup.13='blurProp($event)', v-model='privateState.rotation | fixed 2',data-prop='rotation', placeholder='Angle', :disabled='privateState.locked || privateState.isOverallMultipleShapes', v-limit-numeric)
+
+     
+
+      #align-window.submenu(v-show='privateState.isAlignWindow')
+        h3 {{ sharedState.aligntocaseHeaderlabel }}
+        ul.secondary-buttons
+          li.button.multi-line(@click='menuClicked("alignToCaseCenterHorz",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignCaseHorzTooltip,"align_case_horz_tooltip.gif")')
+            | {{ sharedState.centerhorzLabel }}
+          li.button.multi-line(@click='menuClicked("alignToCaseCenterVert",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignCaseVertTooltip,"align_case_vert_tooltip.gif")')
+            | {{ sharedState.centervertLabel }}
+          li.button.multi-line(@click='menuClicked("alignToCaseCenterBoth",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignCaseBothTooltip,"align_case_both_tooltip.gif")')
+            | {{ sharedState.centerbothLabel }}
+        ul.secondary-buttons
+          li.button.multi-line(v-show='privateState.isMulti || privateState.isMultiPlus', @click='menuClicked("spaceHorzToCase", false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.evenSpaceCaseHorzTooltip,"even_space_case_horz_tooltip.gif")')
+            | {{ sharedState.spacehorzLabel }}
+          li.button.multi-line(v-show='privateState.isMulti || privateState.isMultiPlus', @click='menuClicked("spaceVertToCase", false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.evenSpaceCaseVertTooltip,"even_space_case_vert_tooltip.gif")')
+            | {{ sharedState.spacevertLabel }}
+        h3(v-show='privateState.isMulti || privateState.isMultiPlus') {{ sharedState.aligntoselectionHeaderlabel }}
+        ul.secondary-buttons(v-show='privateState.isMulti || privateState.isMultiPlus')
+          li.button(@click='menuClicked("alignToTop",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignTopTooltip,"align_top_tooltip.gif")')
+            | {{ sharedState.topLabel }}
+          li.button(@click='menuClicked("alignToBottom",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignBottomTooltip,"align_bottom_tooltip.gif")')
+            | {{ sharedState.bottomLabel }}
+          li.button(@click='menuClicked("alignToLeft",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignLeftTooltip,"align_left_tooltip.gif")')
+            | {{ sharedState.leftLabel }}
+          li.button(@click='menuClicked("alignToRight",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignRightTooltip,"align_right_tooltip.gif")')
+            | {{ sharedState.rightLabel }}
+        ul.secondary-buttons(v-show='privateState.isMulti || privateState.isMultiPlus')
+          li.button.multi-line(@click='menuClicked("alignToCenterVert",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignCtrHorzTooltip,"align_ctr_horz_tooltip.gif")')
+            | {{ sharedState.centerhorzLabel }}
+          li.button.multi-line(@click='menuClicked("alignToCenterHorz",false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignCtrVertTooltip,"align_ctr_vert_tooltip.gif")')
+            | {{ sharedState.centervertLabel }}
+          li.button.multi-line(v-show='privateState.isMultiPlus', @click='menuClicked("spaceHorz", false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignSpaceHorzTooltip,"align_space_horz_tooltip.gif")')
+            | {{ sharedState.spacehorzLabel }}
+          li.button.multi-line(v-show='privateState.isMultiPlus', @click='menuClicked("spaceVert", false, "align")', data-toggle='tooltip', data-placement='left', data-container='body', data-html="true", :data-original-title='translateTooltip(sharedState.alignSpaceVertTooltip,"align_space_vert_tooltip.gif")')
+            | {{ sharedState.spacevertLabel }}
+
+  
+ 
+  
+  #message-area.warning(v-cloak, v-show='sharedState.message', transition="fade")
+    span
+      | {{sharedState.message}}
+    i.fa.fa-times(@click='sharedState.message="";')
+
+  //.chat-area#chat-area(v-cloak, v-show='sharedState.currentUser && sharedState.currentDesign._id && sharedState.currentDesign.shareable')
+  //  .chat-window(v-show='privateState.chatOpen')
+  //    input.form-control.form-control-inline#chat-input(placeholder='message', v-model='privateState.message', @keyup.enter='sendChatMessage')
+  //    .chat-content
+  //      ul.chat-scrollable
+  //        li(v-for='message in sharedState.chat.messages', track-by='$index', :class='{"chat-me":message.from.id === sharedState.currentUser.id, "chat-not-me":message.from.id !== sharedState.currentUser.id}')
+  //          span.chat-avatar
+  //            img(:src='message.from.gravatarURL')
+  //          span.chat-email
+  //            | {{message.from.email.split('@')[0]}}
+  //          span
+  //            | {{message.text}}
+  //
+  //  a.chat.btn.btn-xs.btn-default(href='#', @click='privateState.chatOpen = !privateState.chatOpen')
+  //    i.fa.fa-user
+  //    | Chat
+
+block content
+  .page-header#content.page-content-scroll(style="padding: 20px")
+    h3 {{sharedState.myOrders}}
+      small &nbsp; ({{sharedState && sharedState.prevOrdersList && sharedState.prevOrdersList.length ? sharedState.prevOrdersList.length : 0}})
+
+    
+       
+      div.form-inline.small.pull-right.search-form(style="margin-right: 2em")
+        .form-group.has-clear.has-feedback
+          label {{sharedState.searchLabel}}: &nbsp;
+          input.form-control.input-sm(name='search',style="margin-right: 2em", placeholder='{{sharedState.enterOrderNum}}', :value='sharedState.orderSearchText' @keyup.enter='onOrderSearch($event)')
+          span.glyphicon.glyphicon-remove.form-control-clear.form-control-feedback.search-cancel(style="cursor: pointer; pointer-events: all; marginLeft: -50px;" @click='onOrderSearchRemove($event)')
+
+    div(v-if='sharedState.showOrderLoading' class='order-loader' )
+      .logo-loader
+       .cs-loader
+        .cs-loader-inner.order-loader
+         label   ●
+         label   ●
+         label   ●
+         label   ●
+         label   ●
+         label   ●
+    table.table(v-if='sharedState && sharedState.prevOrdersList && sharedState.prevOrdersList.length && sharedState.prevOrdersList.length > 0' id='orderTable')
+      thead
+        tr
+          th {{sharedState.orderDate}}
+          th {{sharedState.orderNumber}}
+          th {{sharedState.statusLabel}}
+          th {{sharedState.trackingNumber}}
+          th {{sharedState.shippedDate}}
+          th {{sharedState.totalLabel}}
+          th(style="width:50px")
+
+      tbody(id='orderTableBody')
+          tr(v-for='order in sharedState.orderCurrentPageData' id='{{order.order_id}}')
+            td
+             {{order.timestamp}}
+            td
+             a.order-link(@click='expandOrderRow(order)'){{order.order_id}}
+            td
+             {{order.status}}
+            td
+             span.order-link(v-if='order.trackingLink === true' ){{order.trackingNumber}}
+             a.order-link(v-else @click='trakingOrderClick(order)'){{order.trackingNumber}}
+            td
+             {{order.shipment_date}}
+            td
+             {{order.subtotal}}
+
+             td(style="display:flex;")
+              a(style="margin-right:10px;").btn.btn-sm.btn-success.pull-right(@click='expandOrderRow(order)') {{sharedState.showDetails}} 
+               span.tog(v-if='sharedState && sharedState.isShowExpandRowId !== order.order_id')
+               span.togdown(v-if='sharedState && sharedState.isShowExpandRowId === order.order_id')
+              a(v-if='order.redeemObj == false' style="margin-right:10px; cursor:no-drop; opacity:0.6;" data-toggle="tooltip" data-original-title='{{sharedState.redeemTooltip}}').btn.btn-sm.btn-success.pull-right {{sharedState.redeemFailsafe}}            
+              a(v-else style="margin-right:10px;").btn.btn-sm.btn-success.pull-right(@click='redeemFailsafeClick()') {{sharedState.redeemFailsafe}}            
+              a.btn.btn-sm.btn-success.pull-right(@click='reorder(true, order)') {{sharedState.reorder}}
+          tr( id='expandedDataRow')
+          
+            //-  {{order.company_id}}
+            //- td
+            //-  {{order.item_id}}
+            //- td
+            //-  a.order-link(@click='expandOrderRow(order)'){{order.order_id}}
+            //- td
+            //-  {{order.product}}
+            //- td
+            //-  {{order.product_code}}
+            //- td
+            //-  {{order.base_price}}
+            //- td
+            //-  {{order.discount}}
+            //- td
+            //-   a.btn.btn-sm.btn-success.pull-right(@click='reorder(true, order)') Reorder
+          
+                    
+      tfoot(id='orderTableFooter')
+       tr
+        td.text-center(colspan=11)
+          ul.pagination(style="margin-left:-105px;")
+
+            li(:class='{"disabled":(1 === sharedState.orderCurrentPage), "prevButton":(1 !== sharedState.orderCurrentPage)}'  @click='(1 !== sharedState.orderCurrentPage) ?  onLastPreviousClick(): null')
+              a( aria-label='Previous' )
+                span(aria-hidden='true') &laquo;
+
+            li(:class='{"disabled":(1 === sharedState.orderCurrentPage), "prevButton":(1 !== sharedState.orderCurrentPage)}'  @click='(1 !== sharedState.orderCurrentPage) ?  onPreviousClick(): null')
+              a( aria-label='Previous' )
+                span(aria-hidden='true') {{sharedState.previousLabel}}
+
+            li(v-if='sharedState.orderPrevContinues === true' class='disabled' )
+              a( aria-label='Previous' )
+                span(aria-hidden='true') ...
+           
+            li(v-for='index in sharedState.orderTotalPagination' class='pagination-inactive-class'  @click='(index+1+sharedState.orderPaginationOffset !== sharedState.orderCurrentPage) ?  onNumberChange(index+1+sharedState.orderPaginationOffset): null' )
+              a(:class='{"pagination-inactive-class":(index+1+sharedState.orderPaginationOffset !== sharedState.orderCurrentPage), "pagination-active-class disabled":(index+1+sharedState.orderPaginationOffset === sharedState.orderCurrentPage)}'  @click='(1 !== sharedState.orderCurrentPage) ?  onNumberChange(index+1+sharedState.orderPaginationOffset): null' href='#') {{index+1+sharedState.orderPaginationOffset}}
+             
+            li(v-if='sharedState.orderNextContinues === true' class='disabled' )
+              a( aria-label='Next' )
+                span(aria-hidden='true') ...   
+
+            li(:class='{"disabled":(sharedState.orderTotalPage === sharedState.orderCurrentPage), "prevButton":(sharedState.orderTotalPage !== sharedState.orderCurrentPage)}'  @click='(sharedState.orderTotalPage !== sharedState.orderCurrentPage) ?  onNextClick(): null' )
+              a( aria-label='Previous' )
+                span(aria-hidden='true') {{sharedState.nextLabel}}
+
+            li(:class='{"disabled":(sharedState.orderTotalPage === sharedState.orderCurrentPage), "prevButton":(sharedState.orderTotalPage !== sharedState.orderCurrentPage)}'  @click='(sharedState.orderTotalPage !== sharedState.orderCurrentPage) ?  onLastNextClick(): null' )
+              a( aria-label='Previous' )
+                span(aria-hidden='true') &raquo;
+            
+
+          h3.pull-left
+            small
+              | Page {{sharedState && sharedState.orderCurrentPage}} of {{sharedState && sharedState.orderTotalPage}}
+   
+    div(v-if='!sharedState || !sharedState.prevOrdersList || !sharedState.prevOrdersList.length || !sharedState.prevOrdersList.length > 0')
+     
+     p(v-if='!sharedState.showOrderLoading' )
+      | No orders found.
+      
+  #stage-container1
+    canvas#mcb-stage(width='500', height='0' style="display: none;")
+    canvas#temp-canvas
+
+  #loading-screen
+    .logo-outer
+      .logo-inner
+        img(src="/imgs/MCB_Logo_KO_RGB.svg", style="background-color: #fff; max-height: 115px; padding: 4px;")
+      .logo-loader
+        .cs-loader
+          .cs-loader-inner
+            label   ●
+            label   ●
+            label   ●
+            label   ●
+            label   ●
+            label   ●
+  audio(id='click', src='/sounds/click.mp3', preload='auto')
+
+  #three-d-modal(v-show='sharedState.showThreeDModal')
+    a.close(href='#', @click.stop='sharedState.showThreeDModal=false')
+      i.fa.fa-times
+    //- canvas#render-canvas(touch-action='none')
+    #three-d-status(touch-action='none')
+    #not-supported.hide
+      | Sorry but your browser does not support 3D.
+    .threed-help
+      span(v-show='privateState.os === "MacOS"')
+        p
+          | {{sharedState.zoom3Dmaclabel}}
+        p
+          | {{sharedState.mouseWheel3dlabel}}
+      span(v-show='privateState.os !== "MacOS"')
+        p
+          | {{sharedState.zoom3Dpclabel}}
+        p
+          | {{sharedState.mouseWheel3dlabel}}
+
+
+  #three-d-loading
+    h2
+      | Loading 3D
+    .cssload-tetrominos
+      .cssload-tetromino.cssload-box1
+      .cssload-tetromino.cssload-box2
+      .cssload-tetromino.cssload-box3
+      .cssload-tetromino.cssload-box4
+  #too-small
+    div
+      p
+        | Your screen resolution is too small. Please use on a desktop
+      p
+        | Please use a supported tablet or desktop.
+  #version(style="padding: 0.25em")
+    | {{ caseData.store.ezID }}-2.1
+  #disabled-overlay(v-show='sharedState.disabledModalVisible')
+    .header-overlay
+    .sidebar-overlay
+
+
+block templates
+  #templates.hidden
+    #brand-selection
+      select(multiple="multiple")
+        option(:value="brand._id", v-for='brand in sharedState.admin.brands')
+          | {{brand.name}}
+    #category-input-template
+      form.form-horizontal
+        fieldset
+          // Form Name
+          legend Form Name
+          // Text input
+          .form-group
+            label.col-md-12.control-label(for='textinput')
+            .col-md-12
+              input.form-control.input-md(type='text', placeholder='Category Name')
+          // Select Multiple
+          .form-group
+            label.col-md-12.control-label(for='brands')
+              | Brands
+            .col-md-12
+              select#brands.form-control(name='brands', multiple='multiple')
+                option(v-for='brand in sharedState.admin.brands', :value='brand._id')
+                  | {{brand.name}}
+    #selectable-template.hidden
+      select
+        option
+        option(:value='item[key]' v-for='item in loopable')
+          | {{item[value]}}
+    #modal-template.hidden
+      .modal-mask(v-show='show', transition='modal',:style="{'z-index':zindex}")
+        .modal-wrapper
+          .modal-container(:class='container', :style='modalContainerStyle')
+            slot(name='close')
+              a.close-modal(href='#', @click='closeModal')
+                i.fa.fa-times
+            .modal-header
+              slot(name='header')
+                | default header
+            .modal-body
+              slot(name='body')
+                | default body
+            hr.none(v-if='divider', style="margin:10px 0 10px 0; border-color: rgba(0,0,0,0.2);")
+            .modal-footer
+              slot(name='footer')
+                | default footer
+                button.modal-default-button(@click='show = false')
+                  | OK
+            div.loading(v-if='loading')
+              h3 Loading...
+              div.material-progress-bar
+                div.indeterminate
+
+block modals
+  #modals
+
+    #account-profile-modal(v-cloak)
+      modal(:show.sync='sharedState.showAccountProfileModal', container='modal-md', :divider='true', modal-container-style="min-width: 300px;width: 35%;min-height: 125px;height: 300px;")
+
+        h3(slot='header')
+          | {{sharedState.myAccountLabel}}
+          .p(slot='close')
+
+        .content(slot='body')
+          .form-horizontal
+            .form-group(:class="{'has-error':errors.email}")
+              label.col-sm-3.control-label(for='email') {{sharedState.emailLabel}}
+              .col-sm-7(style="height:50px")
+                input.form-control(type='email', id='email', v-model='user.email', @keyup="checkEmail", autocomplete="off")
+                small.help-block(v-show="errors.email") A valid email address is required!
+            .form-group
+              label.col-sm-3.control-label(for='name') {{sharedState.nameLabel}}
+              .col-sm-7
+                input.form-control(type='text', id='name', v-model='user.profile.name', autocomplete="off")
+
+        .content(slot='footer', class="fixed-bottom")
+          div.row
+            div.col-xs-12.text-right
+              button.btn.btn.btn-primary(@click='submit', :disabled="loading")
+                i.fa.fa-save
+                | Save
+
+    #change-password-modal(v-cloak)
+      modal(:show.sync='sharedState.showChangePasswordModal', container='modal-md', :divider='true', modal-container-style="min-width: 300px;width: 35%;min-height: 125px;height: auto;")
+
+        h3(slot='header')
+          | {{sharedState.changePasswordLabel}}
+          .p(slot='close')
+
+        .content(slot='body')
+          .form-horizontal
+            .form-group(:class="{'has-error': errors.password}")
+              label.col-sm-4.control-label(for='newpass')
+                | {{sharedState.newPasswordLabel}}
+              .col-sm-7
+                input.form-control(type='password', autocomplete="new-password", id='newpass', v-model='newPassword', @blur="validate")
+                small.help-block(v-show="errors.newPassword") Password must be longer than 4 characters!
+            .form-group(:class="{'has-error': errors.passwordConfirm}")
+              label.col-sm-4.control-label(for='passconf')
+                | {{sharedState.passwordConfirmLabel}}
+              .col-sm-7
+                input.form-control(type='password', autocomplete="new-password", id='passconf', v-model='passwordConfirm', nofill='', @keyup="validate")
+                small.help-block(v-show="errors.passwordConfirm") Password must be longer than 4 characters!
+                small.help-block(v-show="errors.match") Passwords do not match!
+
+        .content(slot='footer', class="fixed-bottom")
+          div.row
+            div.col-xs-12.text-right
+              button.btn.btn.btn-primary(@click='submit', :disabled="loading")
+                i.fa.fa-save
+                | Save
+
+    #brand-category-selection(v-cloak)
+      modal(:show.sync='sharedState.showBrandCategorySelectionModal')
+        h3(slot='header')
+          | Select Category and Brand
+        .content(slot='body')
+          select(v-model='privateState.currentCategory', @change='categoryChange')
+            option(:value="category._id", v-for="category in privateState.categories")
+              | {{category.name}}
+          select(v-model='privateState.currentBrand', @change='brandChange')
+            option(:value="brand._id", v-for="brand in privateState.brands")
+              | {{brand.name}}
+        .footer(slot='footer')
+          a.btn.btn-default(href='#', @click='cancelSave')
+            | Cancel
+          a.btn.btn-primary(href='#', @click='saveShape')
+            | Save
+
+    #public-design-modal(v-cloak)
+      modal(:show.sync='sharedState.showPublicDesignModal', :container='currentContainerSize', :loading='dataLoading')
+        .content(slot='absolute')
+
+        h3(slot='header')
+          | {{modalTitle}}
+        .content(slot='close')
+
+        .content(slot='body')
+          div.design-card-container(v-if="currentStep == 1")
+            div.mb-3(v-for="(index,design) in arrayOfDesignsToCreatePublicDesignFrom")
+              fieldset.design-card(@click="selectDesign(index)", :class="{selectedDesign: index == selectedIndex}")
+                legend
+                  | {{design.currentRev.name}}
+                div.content-wrap.mpointer
+                  div.snapshot(v-for='layer in design.currentRev.layers', v-if="layer.isLid == 'false'")
+                    img(:src="layer.snapShot")
+          div.design-card-container(v-if="currentStep == 2")
+            fieldset.design-card
+              legend
+                span.title(style="margin-right: 5px;") {{sharedState.pdUsingDesignLabel}}
+                | {{designToMakeIntoPublicDesign.currentRev.name}}
+              div.content-wrap
+                div.snapshot(v-for='layer in designToMakeIntoPublicDesign.currentRev.layers', v-if="layer.isLid == 'false'")
+                  img(:src="layer.snapShot")
+            fieldset
+              legend
+                span.title {{sharedState.pdPublicDesignInfoTitleLabel}}
+              form.col-xs-10.col-xs-offset-1
+                div.form-group(:class="{'has-error': errors.nameOfFoam}")
+                  label(for='name-the-foam')
+                    | {{sharedState.pdFoamNameLabel}}
+                    span.error-message(v-if="errors.nameOfFoam")
+                      | {{sharedState.pdFoamNameRequiredText}}
+                  input.form-control.input-lg#name-the-foam(type='text', :placeholder='sharedState.pdFoamNamePlaceholderText', v-model='nameOfFoam')
+                  span.footer {{sharedState.pdFoamNameFootnoteText}}
+                div.form-group(:class="{'has-error': errors.describeContents}")
+                  label(for='description')
+                    | {{sharedState.pdDescription}}
+                    span.error-message(v-if="errors.describeContents")
+                      | {{sharedState.pdDescriptionRequiredText}}
+                  input.form-control.input-lg#description(type='text', :placeholder='sharedState.pdDescriptionPlaceholderText', v-model='describeContents')
+                  span.footer {{sharedState.pdDescriptionFootnoteText}}
+                hr
+                div.form-group(ref='designContents' ,:class="{'has-error': errors.designContents}")
+                  label()
+                    | {{sharedState.pdContents}}
+                    span.error-message(v-if="errors.designContents")
+                      | {{sharedState.pdContentsRequiredText}}
+                  div.design-input-x-container(v-for="(index, item) in designContents", track-by="$index", style="position:relative;")
+                    input.form-control.input-lg( type='text', :placeholder='sharedState.pdContentsPlaceholderText',v-model='item', @keyup.enter="addContentToDesign()", :id="'content-list-ref-'+$index")
+                    div.design-input-x.mpointer(@click="deleteDesignContentItem(index)")
+                      i.fa.fa-2x.fa-times
+                  span.footer
+                    a.mpointer( @click="addContentToDesign()") {{sharedState.pdContentsAddMoreButtonLabel}}
+
+                hr(style="margin-bottom:20px")
+                div.form-group(:class="{'has-error': errors.pickedCategory}")
+                  label
+                    | {{sharedState.pdCategory}}
+                    span.error-message(v-if="errors.pickedCategory")
+                      | {{sharedState.pdCategoryRequiredText}}
+                  select.form-control.input-lg(v-model="pickedCategory")
+                    option(disabled, :selected="pickedCategory === null")
+                      | {{sharedState.pdSelectOne}}
+                    option(v-for="(index,opt) in caseOptions", :value="index", track-by="$index")
+                      | {{opt.category}}
+                hr(style="margin-bottom:20px")
+                div.form-group(:class="{'has-error': errors.imagesAsBase64Data}")
+                  label
+                    | {{sharedState.pdUploadPictures}}
+                    a.cricle.btn.btn-primary.fa.fa-plus.mpointer
+                    label.file-upload(for="fileUp")
+                      span.error-message(v-if="errors.imagesAsBase64Data")
+                        | {{sharedState.pdUploadPicturesRequiredText}}
+                    input.file-upload#fileUp(type='file', multiple="multiple", accept="image/*", @change="addImages($event)")
+                  div.container-fluid#file-upload-wrap
+                    div.col-lg-6.col-xs-12.no-gutters
+                      div.col-xs-6.file-upload
+                        div.design-input-x.mpointer(@click="removeImage(0)",v-if="imagesAsBase64Data[0]")
+                            i.fa.fa-2x.fa-times
+                        img(:src="imagesAsBase64Data[0]" v-if="imagesAsBase64Data[0]")
+                        i.fa.fa-5x.fa-image(v-else)
+                        div.rotate-control(v-if="imagesAsBase64Data[0]")
+                          div.rotate-left.mpointer
+                            i.fa.fa-2x.fa-rotate-left(@click="rotateLeft(0)")
+                          div.rotate-right.mpointer
+                            i.fa.fa-2x.fa-rotate-right(@click="rotateRight(0)")
+                        div.img-title {{sharedState.pdImageOne}}
+                      div.col-xs-6.file-upload
+                        div.design-input-x.mpointer(@click="removeImage(1)",v-if="imagesAsBase64Data[1]")
+                          i.fa.fa-2x.fa-times
+                        img(:src="imagesAsBase64Data[1]" v-if="imagesAsBase64Data[1]")
+                        i.fa.fa-5x.fa-image(v-else)
+                        div.rotate-control(v-if="imagesAsBase64Data[1]")
+                          div.rotate-left.mpointer
+                            i.fa.fa-2x.fa-rotate-left(@click="rotateLeft(1)")
+                          div.rotate-right.mpointer
+                            i.fa.fa-2x.fa-rotate-right(@click="rotateRight(1)")
+                        div.img-title {{sharedState.pdImageTwo}}
+                    div.col-lg-6.col-xs-12.no-gutters
+                      div.col-xs-6.file-upload
+                        div.design-input-x.mpointer(@click="removeImage(2)",v-if="imagesAsBase64Data[2]")
+                          i.fa.fa-2x.fa-times
+                        img(:src="imagesAsBase64Data[2]" v-if="imagesAsBase64Data[2]")
+                        i.fa.fa-5x.fa-image(v-else)
+                        div.rotate-control(v-if="imagesAsBase64Data[2]")
+                          div.rotate-left.mpointer
+                            i.fa.fa-2x.fa-rotate-left(@click="rotateLeft(2)")
+                          div.rotate-right.mpointer
+                            i.fa.fa-2x.fa-rotate-right(@click="rotateRight(2)")
+                        div.img-title {{sharedState.pdImageThree}}
+                      div.col-xs-6.file-upload
+                        div.design-input-x.mpointer(@click="removeImage(3)", v-if="imagesAsBase64Data[3]")
+                          i.fa.fa-2x.fa-times
+                        img(:src="imagesAsBase64Data[3]" v-if="imagesAsBase64Data[3]")
+                        i.fa.fa-5x.fa-image(v-else)
+                        div.rotate-control(v-if="imagesAsBase64Data[3]")
+                          div.rotate-left.mpointer
+                            i.fa.fa-2x.fa-rotate-left(@click="rotateLeft(3)")
+                          div.rotate-right.mpointer
+                            i.fa.fa-2x.fa-rotate-right(@click="rotateRight(3)")
+                        div.img-title {{sharedState.pdImageFour}}
+            fieldset.design-card(v-if="!sharedState.currentUser.username")
+              | {{sharedState.currentUser.username}}
+              legend
+                | {{sharedState.pdUpdateAccountInformation}}
+              form.col-xs-10.col-xs-offset-1
+                div.form-group(style="margin-top:50px", :class="{'has-error': errors.displayName}")
+                  label(for='displayname')
+                    | {{sharedState.pdDisplayName}}
+                    span.error-message(v-if="errors.displayName")
+                      | {{sharedState.pdDisplayNameRequiredText}}
+                  input.form-control.input-lg#displayname( type='text', :placeholder='sharedState.pdDisplayNameFootnoteText', required='', v-model='displayName')
+          div.design-card-container#image-and-content-wrap(v-if="currentStep == 3")
+            div#mcb-web-pic
+              div#pic-overlay-breadcrumb
+                | Store / mycasebuilder&reg; store / {{caseCategory.category}} / {{nameOfFoam}}
+              div#pic-overlay-price
+                div(style="margin-bottom:3%;") Case with Foam:
+                  span(style="float:right;") $XXX.XX
+                div Foam Only:
+                  span(style="float:right;") $XX.XX
+              div#pic-overlay-content
+                div#title
+                  span(style="font-size: calc(.8vw + .8vh + .4vmin);font-weight:bold;") {{nameOfFoam}}
+                div#picture-column
+                  div.picture(v-if="imagesAsBase64Data[0]", :class="{selected:previewSelected == 0}")
+                    img(:src="imagesAsBase64Data[0]", @click="changeMainPicture(0)")
+                  div.picture(v-if="imagesAsBase64Data[1]", :class="{selected:previewSelected == 1}")
+                    img(:src="imagesAsBase64Data[1]", @click="changeMainPicture(1)")
+                  div.picture(v-if="imagesAsBase64Data[2]", :class="{selected:previewSelected == 2}")
+                    img(:src="imagesAsBase64Data[2]", @click="changeMainPicture(2)")
+                  div.picture(v-if="imagesAsBase64Data[3]", :class="{selected:previewSelected == 3}")
+                    img(:src="imagesAsBase64Data[3]", @click="changeMainPicture(3)")
+                div#big-picture-and-content
+                  div(v-if="selected !== null")
+                    img(:src="imagesAsBase64Data[previewSelected]")
+              img(src="/imgs/public_design_preview.png")
+              div#describe-contents
+                div(style="border-bottom:1px solid #333;margin-bottom:15px")
+                  span#describe-contents-description Description
+                div(style="margin-bottom:20px")
+                  | {{describeContents}}
+                div(style="font-weight:bold;") Includes Spaces for:
+                div(v-for="(index, item) in blankFilteredDesignContents", track-by="$index")
+                  | - {{item}}
+          div.design-card-container(v-if="currentStep >= (totalSteps + 1)")
+            h1.text-center(style="color:#42b983;")
+              | {{sharedState.pdThankYou}}
+            br
+            h3(style="text-align:justify;")
+              | {{sharedState.pdThankYouSubmittedText}}
+        .content(slot='footer', class="fixed-bottom")
+          div.row
+            div.col-lg-6.col-lg-offset-3.col-xs-12.col-xs-offset-0.no-padding(v-if="currentStep <= totalSteps")
+              div.col-xs-6.text-center
+                a.btn.btn-danger(@click="cancel", v-if="currentStep == 1 || (currentStep <= minStep)", :disabled="dataLoading")
+                  | {{sharedState.cancelLabel}}
+                a.btn.btn-primary(@click="previous", v-else)
+                  | {{sharedState.previousLabel}}
+              div.col-xs-6.text-center
+                a.btn.btn-primary(@click="doContinue", v-if="currentStep < totalSteps && currentStep !== totalSteps - 1", :disabled="currentStep == 1 && selectedIndex === null")
+                  | {{sharedState.continueLabel}}
+                a.btn.btn-primary(@click="doContinue", v-if="currentStep == totalSteps - 1", :disabled="previewDisabled")
+                  | {{sharedState.previewLabel}}
+                a.btn.btn-success(@click="submit",:disabled="dataLoading", v-if="currentStep >= totalSteps")
+                  | {{sharedState.submitLabel}}
+            div.text-center(v-else)
+              a.btn.btn-primary(@click="cancel")
+                | {{sharedState.closeLabel}}
+
+
+    #login-modal(v-cloak)
+      modal(:show.sync='sharedState.showLoginModal')
+        h3(slot='header')
+          | {{ sharedState.loginLabel }}
+        .content(slot='body')
+          .alert.alert-danger(role='alert', v-if='privateState.loginError')
+            | {{privateState.loginErrorMessage}}
+          form.form-horizontal.login-form
+            fieldset
+              // Text input
+              .form-group
+                label(for='email-login') {{sharedState.emailLabel}}
+                input#email-login.form-control.input-md(name='email', type='text', placeholder='{{sharedState.emailLabel}}', required='',v-model='loginEmail', @keyup.13='login')
+              // Password input
+              .form-group
+                label(for='login-password') {{sharedState.passwordLabel}}
+                input#login-password.form-control.input-md(name='password', type='password', placeholder='{{sharedState.passwordLabel}}', @keyup.13='login', required='', v-model='loginPassword')
+              .form-group(v-if="!sharedState.launchPublicDesignModalAfterLoginComplete")
+                a(href='#', @click='openRegistrationModal')
+                  | {{sharedState.dontHaveaccountregister}}
+              .form-group
+                a(href='#', @click='openForgotPasswordModal')
+                  | {{sharedState.forgotPassword}}
+        .footer(slot='footer')
+          a.btn.btn-primary#login-modal-login-btn(@click='login') {{ sharedState.loginLabel }}
+
+    #register-modal(v-cloak)
+      modal(:show.sync='sharedState.showRegisterModal')
+        h3(slot='header')
+          | {{sharedState.registerLabel}}
+        .content(slot='body')
+          .alert.alert-danger(role='alert', v-if='privateState.registerError')
+            | {{privateState.registerErrorMessage}}
+          form.form-horizontal.login-form
+            fieldset
+              // Text input
+              .form-group
+                label(for='email-register') {{sharedState.emailLabel}}
+                input#email-register.form-control.input-md(v-model='registerEmail', name='email', type='text', placeholder='{{sharedState.emailLabel}}', required='')
+              // Password input
+              .form-group
+                label(for='register-password') {{sharedState.passwordLabel}}
+                input#register-password.form-control.input-md(v-model='registerPassword', name='password', type='password', placeholder='{{sharedState.passwordLabel}}', required='')
+              .form-group
+                a(href='#', @click='openLoginModal')
+                  | {{sharedState.alreadyHaveanaccountlogin}}
+              .form-group
+                a(href='#', @click='openForgotPasswordModal')
+                  | {{sharedState.forgotPassword}}
+        p(slot='footer')
+          a.btn.btn-primary(@click='register') {{sharedState.registerLabel}}
+
+    #welcome-need-password-reset-modal(v-cloak)
+      modal(:show.sync='sharedState.showNeedPasswordResetModal')
+        h3(slot='header')
+          | {{sharedState.welcomeLabel}}
+        .content(slot='body')
+          p
+            | {{sharedState.welcomeNewmcbresetpass}}
+        p(slot='footer')
+          a.btn.btn-primary(@click='sharedState.showNeedPasswordResetModal = false') Ok
+
+    #forgot-password-modal(v-cloak)
+      modal(:show.sync='sharedState.showForgotPasswordModal')
+        h3(slot='header')
+          | {{sharedState.forgotPassword}}
+        .content(slot='body')
+          .alert(role='alert', v-if='privateState.forgotPasswordError',:class='{"alert-success":privateState.forgotPasswordSuccessState,"alert-danger":privateState.forgotPasswordErrorState}')
+            | {{privateState.forgotPasswordErrorMessage}}
+          form.form-horizontal.login-form
+            fieldset
+              // Text input
+              .form-group
+                label(for='email-forgot') {{sharedState.emailLabel}}
+                input#email-forgot.form-control.input-md(v-model='forgotEmail', name='email', type='text', placeholder='{{sharedState.emailLabel}}', required='')
+              .form-group
+                a(href='#', @click='openLoginModal')
+                  |{{sharedState.alreadyHaveanaccountlogin}}
+              .form-group(v-if="!sharedState.launchPublicDesignModalAfterLoginComplete")
+                a(href='#', @click='openRegistrationModal')
+                  | {{sharedState.dontHaveaccountregister}}
+        p(slot='footer')
+          a.btn.btn-primary(@click='forgotPassword') {{sharedState.resetPassword}}
+
+    #locked-modal(v-cloak)
+      modal(:show.sync='sharedState.showLockedModal')
+        h3(slot='header')
+          | {{sharedState.projectLockedLabel}}
+        .p(slot='close')
+        .content(slot='body')
+          .cog-wrapper
+            .cog.cog-small
+            .cog-anti.cog-medium
+            .cog.cog-large
+          p
+            | {{sharedState.projectLockedLine1}}
+          p
+            | {{sharedState.projectLockedLine2}}
+          p
+            | {{sharedState.projectLockedLine3}}
+          p
+            | {{sharedState.projectLockedLine4}}
+
+          ul.list-unstyled.lock-choices
+            li
+              a.btn.btn-default(href='#', data-toggle='tooltip', data-placement='right', title='{{sharedState.makeUnlockedCopyTooltip}}', @click='makeUnlockedCopy')
+                | {{sharedState.makeUnlockedCopyLabel}}
+            li
+              a.btn.btn-default(href='#', data-toggle='tooltip', data-placement='right', title='{{sharedState.gotoMyDesignsTooltip}}', @click='goToMyDesigns')
+                | {{sharedState.gotoMyDesignsLabel}}
+            li
+              a.btn.btn-default(href='#', data-toggle='tooltip', data-placement='right', title='{{sharedState.openCartLabel}}', @click='openCart')
+                | {{sharedState.openCartLabel}}
+            li
+              a.btn.btn-primary(href='#', data-toggle='tooltip', data-placement='right', title='{{sharedState.reorderThisDesignTooltip}}', @click='reorderDesign')
+                | {{sharedState.reorderThisDesignLabel}}
+
+        p(slot='footer')
+
+    #soft-locked-modal(v-cloak)
+      modal(:show.sync='showModal')
+        h3(slot='header')
+          | {{sharedState.designSoftLockedLabel}}
+        .p(slot='close')
+        .content(slot='body')
+          .row
+            .col-xs-8
+              ul.list-unstyled.lock-choices
+                li
+                  a.btn.btn-primary(href='#', data-toggle='tooltip', data-placement='right', title='{{ sharedState.addAnotherVersionToCartLabel }}', @click='order')
+                    | {{ sharedState.addAnotherVersionToCartLabel }}
+                li
+                  a.btn.btn-default(href='#', data-toggle='tooltip', data-placement='right', title='{{ sharedState.removeThisDesignFromCartAndContinueEditingLabel }}', @click='removeDesignAndContinueEditing')
+                    | {{ sharedState.removeThisDesignFromCartAndContinueEditingLabel }}
+            .col-xs-4
+              p
+                img(:src='sharedState.currentDesign.currentRev.snapshot', style='width: 100%;')
+          .row
+            .col-xs-8.pt-5
+              p.mb-0
+                a(href='#', title='{{ sharedState.openCartLabel }}', @click='openCart')
+                  | {{ sharedState.openCartLabel }}
+                =" | "
+                a(href='#', title='{{ sharedState.gotoMyDesignsLabel }}', @click='goToMyDesigns')
+                  | {{ sharedState.gotoMyDesignsLabel }}
+
+        p(slot='footer')
+
+    #save-design-modal(v-cloak)
+      modal(:show.sync='sharedState.showSaveDesignModal')
+        h3(slot='header')
+          | {{ sharedState.saveyourdesignLabel }}
+        .content(slot='body')
+          .alert(role='alert', v-if='privateState.forgotPasswordError',:class='{"alert-success":privateState.forgotPasswordSuccessState,"alert-danger":privateState.forgotPasswordErrorState}')
+            | {{privateState.forgotPasswordErrorMessage}}
+          form.form-horizontal.save-design-form
+            fieldset
+              // Text input
+              .form-group
+                label(for='design-name') Design Name
+                input#design-name.form-control.input-md(v-model='designName', name='design-name', type='text', placeholder='Design Name', required='')
+        p(slot='footer')
+          a.btn.btn-primary(@click='saveDesign') Save
+
+    #share-modal(v-cloak)
+      modal(:show.sync='sharedState.showShareModal')
+        h3(slot='header')
+          | Share
+        .content(slot='body')
+          .alert(role='alert', v-if='privateState.shareError',:class='{"alert-success":privateState.shareSuccessState,"alert-danger":privateState.shareErrorState}')
+            | {{privateState.shareErrorMessage}}
+          form.form-horizontal.login-form
+            fieldset
+              // Text input
+              .form-group
+                label(for='email-share') Enter the email of the person
+                input#email-share.form-control.input-md(v-model='shareEmail', name='email', type='text', placeholder='Email', required='')
+              .form-group
+                label(for='chat-id') Your secret link to this design
+                input#chat-id.form-control.input-md(readonly='readonly', value='https://www.mycasebuilder.com/app?design={{sharedState.currentDesign.uniqueID}}&chatID={{sharedState.currentDesign.chatID}}')
+        p(slot='footer')
+          a.btn.btn-primary Share Design
+
+    #change-case-modal(v-cloak)
+      modal(:show.sync='sharedState.showChangeCaseModal', container='modal-xl')
+        h3(slot='header')
+          | {{sharedState.changeYourcaselabel}}
+        .content(slot='body')
+          .filter-cases
+            form.form-inline
+              fieldset
+                p
+                  | {{sharedState.currentCaselabel}}: {{sharedState.case.name}}
+              fieldset(:disabled="!privateState.supportsCustom", data-cypress='custom-size-foam-option')
+                .form-group
+                  label(v-if="privateState.supportsCustom")
+                    span {{sharedState.customSizefoamlabel}}
+                    input(type="checkbox", v-model='privateState.isCustom')
+                  label(v-else)
+                    span {{sharedState.customSizefoamlabel}}
+                    input(type="checkbox", v-model='privateState.isCustom')
+                    .tooltip.custom-static.fade.right.in(style="left: 185px; top: 50px;")
+                      .tooltip-arrow(style="top: 50%;")
+                      .tooltip-inner(style="max-width: 100%;")
+                        | {{privateState.customSupportDisabledMessage}}
+              fieldset(data-cypress='custom-size-foam-settings-upper')
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.upperLengthlabel}}
+                    input#upperLength.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='length', :readonly='!privateState.isCustom', v-model='privateState.customCase.length', data-toggle='tooltip', data-placement='bottom', title='', v-limit-numeric)
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.upperWidthlabel}}
+                    input#upperWidth.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='width', :readonly='!privateState.isCustom', data-toggle='tooltip', data-placement='bottom', title='', v-model='privateState.customCase.width', v-limit-numeric)
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.depthLabel}}
+                    input.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='depth', :readonly='!privateState.isCustom', data-toggle='tooltip', data-placement='bottom', title='', v-model='privateState.customCase.totalDepth', v-limit-numeric)
+              fieldset(data-cypress='custom-size-foam-settings-lower')
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.lowerLengthlabel}}
+                    input#lowerLength.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='lowerLength', :readonly='!privateState.isCustom', data-toggle='tooltip', data-placement='bottom', title='', v-model='privateState.customCase.lowerLength', v-limit-numeric)
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.lowerWidthlabel}}
+                    input#lowerWidth.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='lowerWidth', :readonly='!privateState.isCustom', data-toggle='tooltip', data-placement='bottom', title='', v-model='privateState.customCase.lowerWidth', v-limit-numeric)
+                .form-group(v-show='privateState.isCustom')
+                  label
+                    span {{sharedState.cornerRadiuslabel}}
+                    input.form-control.input-xs(type='text', @blur='change($event)', @keyup='change($event)', @input='change($event)', data-prop='cornerRadius', :readonly='!privateState.isCustom', data-toggle='tooltip', data-placement='bottom', title='', v-model='privateState.customCase.cornerRadius', v-limit-numeric)
+              fieldset(data-cypress='use-custom-size-foam-action')
+                input.btn.btn-xs.btn-default(v-show='privateState.isCustom', type='submit', value='{{sharedState.usethisCaselabel}}', @click.prevent='useThisCustomCase', :disabled='privateState.hasError')
+
+            input.form-control(type='search', placeholder='{{sharedState.filterCasesbynamelabel}}', v-show='!privateState.isCustom', v-model='privateState.filterCases')
+          .change-cases
+            table.table(v-if='sharedState.caseSearchResults.length', v-show='!privateState.isCustom')
+              thead
+                tr
+                  th {{sharedState.caseNamelabel}}
+                  th {{sharedState.interiorSizelabel}}
+                  th
+                  th(v-if='sharedState.currentUser.isAdmin')
+              tbody
+                template(v-for='case in sharedState.caseSearchResults | filterBy privateState.filterCases in "name"')
+                  tr(:class='{"disabled": !(checkDesignFitsCase(case))}', )
+                    td {{case.name}}
+                    td {{getMeasurementForCase(case)}}
+                    td
+                      template(v-if="!(checkDesignFitsCase(case))")
+                        a.btn.btn-xs.btn-default(href='#', data-toggle='tooltip', data-placement="left", data-original-title="This case will not fit your design!", disabled) {{sharedState.usethisCaselabel}}
+                      template(v-else)
+                        a.btn.btn-xs.btn-default(href='#', @click='useThisCase(case)') {{sharedState.usethisCaselabel}}
+            p(v-else)
+              | {{sharedState.cannotFindSearch}}
+
+        p(slot='footer')
+
+  
+ 
+
+        div(slot='footer')
+          .row.editables.form-inline(v-show='privateState.photoTracerReady')
+            .zoomable.col-sm-3(style="margin-top: -20px;")
+              label(style="margin-right: 5px") {{sharedState.zoomLabel}}
+              input.form-control(type='range', min=1, max=4, step=.05, @input='photoSetZoomLevel', v-model='privateState.photoZoomLevel')
+            .row.col-sm-9(v-if='privateState.showGridOptions')
+              .col-sm-5.form-group(:class='{"has-error":privateState.photoDrawGridStepError}')
+                label(for='grid-size-input', style="margin-right: 5px") {{sharedState.gridSizelabel}} ({{unitI18N}}):
+                input#grid-size-input.form-control.input-sm(type='text', v-model='photoDrawGridStep')
+                span.help-block(v-show='privateState.photoDrawGridStepError')
+                  | {{ privateState.photoDrawGridStepMessage }}
+              .col-sm-7
+                .checkbox.form-group.col-sm-4
+                  label.checkbox-inline
+                    input.input-sm.checkbox-inline(type='checkbox', v-model='privateState.snapOn', @change='toggleSnap(privateState.snapOn)', style='margin: 0 4px 0')
+                    | {{sharedState.snapTogridlabel}}
+                .checkbox.form-group.col-sm-4
+                  label.checkbox-inline
+                    input.input-sm.checkbox-inline(type='checkbox', v-model='sharedState.showAngles', @change='toggleAngle(sharedState.showAngles)', style='margin: 0 4px 0')
+                    | {{sharedState.showAnglesLabel}}
+
+
+    #shape-library-modal(v-cloak)
+      modal(:show.sync='sharedState.showShapeLibraryModal', container='modal-xl')
+        h3(slot='header')
+          | {{sharedState.shapeLibraryLabel}}
+        .content(slot='body')
+          .row.shape-library-search
+            .col-md-10
+              input.form-control.input-lg(type='search', placeholder='{{sharedState.searchLabel}}', v-model='privateState.query', @focus='this.privateState.searchHasFocus=true;', @blur='this.privateState.searchHasFocus=false;')
+
+              selectable(:placeholder='sharedState.categoryLabel', :disabled='privateState.searchShapes === "private"' v-model='privateState.category', :loopable='sharedState.admin.categories', key='_id', value='name', name='category', width='250')
+
+              selectable(:placeholder='sharedState.brandLabel', :disabled='!privateState.category || privateState.searchShapes === "private"', :loopable='sharedState.admin.brands', v-model='privateState.brand', key='_id', value='name', name='brand', width= '150')
+
+              selectable(:placeholder='sharedState.publicAndPrivateShapesLabel', :loopable='privateState.searchShapeOptions', v-model='privateState.searchShapes', key='_id', value='name', name='shapes', :nosearch='true', width= 'auto')
+            .col-md-2
+              em.total(v-if='privateState.total')
+                | {{ privateState.total }} {{sharedState.resultsLabel}}
+          .row
+            .col-md-12
+              ul.search-results(v-if='privateState.searchResults.length', @scroll='onScrollSearchResults($event)')
+                li(v-for='shape in privateState.searchResults', :key='searchResultsRefresh')
+                  p.title(v-if='(shape.owner !== sharedState.currentUser.id || sharedState.currentUser.anon) && !sharedState.currentUser.isAdmin && !sharedState.currentUser.isLibrarian')
+                    | {{shape.name}}
+                  p(v-else)
+                    span.pull-right(v-if='!sharedState.currentUser.anon && shape.owner === sharedState.currentUser.id')
+                      i.fa.fa-lg.fa-share-alt(@click='toggleOpenShareInputForm(shape._id)', style="cursor:pointer")
+                      i.fa.fa-lg.fa-trash-o(@click='deletePrivateShape(shape._id)', style="cursor:pointer")
+                    input(v-model='shape.name', @change='changeTitle(shape)')
+                  div.image(v-if='!!(shape.thumb||shape.newImage)')
+                    fieldset(:disabled='!shape.shapeFitsInContextual && !shape.fitsTray || !shape.fitsTray && !sharedState.currentTray.isTop')
+                      img.shape-thumb(:src='getImageForShape(shape)')
+                  p.desc(@click='showMoreDesc($event)', v-if='(shape.owner !== sharedState.currentUser.id || sharedState.currentUser.anon) && !sharedState.currentUser.isAdmin && !sharedState.currentUser.isLibrarian')
+                    | {{shape.desc}}
+                  p(v-else)
+                    textarea.form-control(v-model='shape.desc', @change='changeDesc(shape)')
+                  div(v-show='!shape.owner')
+                    p.desc.mfrid(v-if='shape.mrfID !== ""')
+                      | Mfr ID: {{shape.mrfID}}
+                    p.desc.mfrid(v-else)
+                      | Mfr ID: N/A
+                    label(:for='shape._id')
+                      | Orientation
+                    a(href='#', v-if='sharedState.currentUser.isAdmin', @click='adminEditCategories(shape)')
+                      | Edit Categories
+                    select.form-control(v-model='shape.currentOrientation', :id='shape._id')
+                      option(v-for='orientation in shape.orientations', :value='orientation._id', selected='{{$index == 0}}')
+                        | {{orientation.name}}
+                  div.row.container-buttons.container-fluid
+                    .div.col-sm-7
+                      fieldset(:disabled='!shape.shapeFitsInContextual && !shape.fitsTray || !shape.fitsTray && !sharedState.currentTray.isTop')
+                        img.shapeorientation(:class='{"none-chosen":!shape.currentOrientation}', :src='getImageForOrientation(shape)')
+                        img.orientation-prev
+                    .div.col-sm-5
+                      fieldset(:disabled='!shape.shapeFitsInContextual && !shape.fitsTray || !shape.fitsTray && !sharedState.currentTray.isTop')
+                        a.btn.btn-primary.btn-block(href='#', @click='editOrientationToCase(shape)', v-if='sharedState.currentUser.isAdmin || sharedState.currentUser.isLibrarian')
+                          | {{sharedState.editShapeLabel}}
+                        a.btn.btn-warning.btn-block(v-if='shape.shapeFitsInContextual && !shape.fitsTray && sharedState.currentTray.isTop', href='#', @click='addOrientationToCase(shape,true)', data-hover-toggle='tooltip', :data-original-title='sharedState.shapeDoesNotFitTrayButFitsCase')
+                          | {{sharedState.addShapeLabel}}
+                        a.btn.btn-default.btn-block(v-if='!shape.shapeFitsInContextual && shape.fitsTray || shape.shapeFitsInContextual && shape.fitsTray', href='#', @click='addOrientationToCase(shape)')
+                          | {{sharedState.addShapeLabel}}
+                        .btn.btn-default.btn-fake(v-if='!shape.shapeFitsInContextual && !shape.fitsTray || !shape.fitsTray && !sharedState.currentTray.isTop', data-hover-toggle='tooltip', :data-original-title='sharedState.shapeDoesNotFitText')
+                          | {{sharedState.addShapeLabel}}
+                  p.dimensions
+                    | {{getDimensionsForOrientation(shape)}}
+                  div(v-if='privateState.openedShareForm[shape._id]')
+                    hr
+                    p
+                      strong
+                        | Share with:
+                    p(v-for='user in shape.sharedUsers')
+                      input.share-input.form-control(:value='user' placeholder="Enter another user's email")
+                    p
+                      input.share-input.form-control(placeholder="Enter another user's email")
+                    p.text-center
+                      button.btn-primary(type='button', @click='updateSharedUsers(shape)')
+                        | Update sharing preferences
+              p.no-search-results(v-else)
+                | {{sharedState.pleaseSearchforshape}}
+        p(slot='footer')
+    #order-modal(v-cloak)
+      modal(:show.sync='sharedState.showOrderModal', container='modal-xl')
+        h3(slot='header')
+          | {{ sharedState.isAddingNewItemToCart ? sharedState.orderYourCaseLabel : sharedState.yourCartLabel }}
+        .content(slot='body' v-if='sharedState.reOrder')
+          .row(v-for='item in sharedState.cartItems')
+            .col-xs-12
+              .row(v-if='item.fileID === sharedState.currentCartItem.fileID && item.fileUuid === sharedState.currentCartItem.fileUuid')
+                .col-xs-offset-1.col-xs-10
+                  .row.p-2(style='border: 1px solid #000;')
+                    .col-xs-3.vertical-center
+                      template(v-if="true")
+                        img(v-if="true", :src=' item.caseImg', style='width: 100%;')
+                    .col-xs-3.vertical-center.py-2
+                      p
+                        span.text-light
+                          | {{ sharedState.fileidLabel }}:
+                        br
+                        | {{ item.fileID }}
+                      p
+                        span.text-light
+                          | {{ sharedState.projectNameLabel }}:
+                        br
+                        | {{ item.projectName }} ({{ item.designName }})
+                      p
+                        span.text-light
+                          | {{ sharedState.caseTemplateLabel }}:
+                        br
+                        | {{ item.caseTemplate }}
+                    .col-xs-3.vertical-center
+                      div(v-if='privateState.selectedCaseData && privateState.selectedCaseData.product')
+                        p.my-0
+                          | {{ privateState.caseVersion === privateState.caseVersions.foamOnly.name ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                          | {{ sharedState.priceLabel.toLowerCase() }}:
+                        h4.mb-2.mt-0
+                          strong(data-cypress="base-price") {{ currencyFormatted(privateState.estimatedPrice, cartCurrency) }}
+                        div(v-if='privateState.trayPricingVariant.variant_name && privateState.trayPricingVariant.variant_name !== "None"')
+                          p.my-0
+                            | {{ privateState.trayPricingVariant.variant_name }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.trayPricingVariant.modifier, cartCurrency) }}
+                          hr
+                          p.my-0
+                            | {{ sharedState.totalLabel }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }}
+                    .col-xs-3.vertical-center
+                      p(v-if='!item.hasOnlyFoam && item.csCartMainImg && privateState.caseVersion !== privateState.caseVersions.foamOnly.name')
+                        img(:src='item.csCartMainImg', style='width: 100%;')
+                .col-xs-10.col-xs-offset-1
+                  .row.py-4
+                    .col-xs-12.text-center.vertical-center
+                      span(v-if='!item.hasOnlyFoam')
+                        p {{sharedState.whichCaseVersionLabel}}
+                        a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.caseAndFoam.name, item)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.caseAndFoam.name)}")
+                          | {{sharedState.caseAndCustomFoamLabel}}
+                        span {{sharedState.orLabel}}
+                      a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.foamOnly.name, item)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.foamOnly.name), 'disabled': item.hasOnlyFoam}")
+                        | {{sharedState.customFoamOnlyLabel}}
+                  .row(v-if='privateState.caseVersion')
+                    .col-xs-12
+                      .row
+                        .col-xs-12
+                          ol.p-0(style='list-style-type: none;')
+                            li.mb-4(v-for='(optionIdx, option) in privateState.sortedOptions')
+                              .row.mb-2(v-if='option.comment.toLowerCase() != "choose your foam color"')
+                                .col-xs-4
+                                  h4
+                                    | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                                .col-xs-4
+                                  p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                      | {{sharedState.moreInfoLabel}}
+                                      i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                                .col-xs-4.px-0
+                                  div
+                                    span.cart-options-dropdown-input(data-toggle='dropdown')
+                                      button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false')
+                                        span.caret
+                                        span.sr-only Toggle Dropdown
+                                      input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                      input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                    ul.dropdown-menu(style='left:auto;right:0')
+                                      li(v-for='variant in sortedVariants(option)')
+                                        a(href='#', @click='addToSelectedProductOptions(option, variant, true, item)')
+                                          | {{ formattedVariant(variant, cartCurrency) }}
+                              .row(v-if='option.comment.toLowerCase() != "choose your foam color"')
+                                .col-xs-7
+                                  div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    | {{{optionDescription(option)}}}
+                                .col-xs-5
+                                  p(v-if='optionImg(option)')
+                                    img(:src='optionImg(option)', style='width: 100%;')
+                              .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() != "choose your foam color" ')
+                                .col-xs-10.col-xs-offset-1
+                                  div.p-3.cart-option-more-info
+                                    | {{{optionMoreInfo(option)}}}
+                              .row.mb-2(v-if='option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-4
+                                  h4
+                                    | 1a. {{ option.option_name }}
+                                .col-xs-4
+                                  p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                      | {{sharedState.moreInfoLabel}}
+                                      i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                                .col-xs-4.px-0
+                                  div
+                                    span.cart-options-dropdown-input(data-toggle='dropdown')
+                                      button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                        span.caret
+                                        span.sr-only Toggle Dropdown
+                                      input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                      input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                    ul.dropdown-menu(style='left:auto;right:0')
+                                      li(v-for='variant in sortedVariants(option)')
+                                        a(href='#', @click='addToSelectedProductOptions(option, variant, true, item)')
+                                          | {{ formattedVariant(variant, cartCurrency) }}
+                              .row(v-if='option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-7
+                                  div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    | {{{optionDescription(option)}}}
+                                .col-xs-5
+                                  p(v-if='optionImg(option)')
+                                    img(:src='optionImg(option)', style='width: 100%;')
+                              .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-10.col-xs-offset-1
+                                  div.p-3.cart-option-more-info
+                                    | {{{optionMoreInfo(option)}}}
+                      .row(v-if='!item.failsafeSelected')
+                        .col-xs-offset-2.col-xs-8.text-left.checkbox(style='margin-top:0;')
+                          h3(style='margin-top:0;') {{sharedState.checkoutTermsTitle}}
+                          label
+                            input(type='checkbox', v-model='item.hasAcceptedTerms' , style="top:1px;position:relative")
+                          | {{sharedState.checkoutTermsText}}
+                      br
+                      .row.mb-5.pb-5
+                        div.col-xs-4(style="margin-top:10px")
+                          input(type='checkbox', v-model='privateState.updateOnAddToCartBool', style="top:2px;position:relative;margin-right:4px;")
+                          span {{sharedState.makeChoicesDefault}}
+                        .col-xs-8
+                          div(v-if='sharedState.currentCartItem.fileUuid')
+                            div(v-if='privateState.caseVersion')
+                              .row
+                                .col-lg-8.col-md-8.text-right.vertical-center
+                                  label.pr-1(for='cart-item-quantity') {{sharedState.quantityLabel}}:
+                                  input(type='number', min=1, v-model='privateState.itemQuantity', id='cart-item-quantity', @change='updateEstimatedPrice(item)', style='width: 3em;')
+                                .col-lg-3.col-md-4.text-left.vertical-center
+                                  span(v-if='!currentFileIsInCart')
+                                    a.btn.btn-primary.btn-lg(href='#', @click='addToCart({edit: false})', :disabled='!privateState.caseVersion')
+                                      | {{sharedState.addToCartLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                  span(v-else)
+                                    a.btn.btn-primary.btn-md.mr-1(href='#', @click='addToCart({edit: true},item)', :disabled='!privateState.caseVersion || !item.failsafeSelected && !item.hasAcceptedTerms', :data-hover-toggle='!item.failsafeSelected && !item.hasAcceptedTerms ? "tooltip" : ""', :data-original-title='sharedState.checkoutTermsToolTip')
+                                      | {{sharedState.saveItemLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                    a.btn.btn-default(href='#', @click='cancelAddToCart')
+                                      | {{sharedState.cancelEditingLabel}}
+              div.row(v-else)
+                .col-xs-offset-1.col-xs-10(v-if='!sharedState.isAddingNewItemToCart')
+                  .row
+                    .col-xs-3.vertical-center
+                      div
+                        h3.my-0.pb-1                          
+                          | {{ item.quantity }} x {{ currencyFormatted(item.estimatedPrice / item.quantity, item.currency) }}
+                        p.mb-3
+                          | {{ (item.caseVersion === privateState.caseVersions.foamOnly.name) ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                     
+                      p
+                        a(href='#', @click='openCartItem(item)')
+                          i.fa.fa-pencil
+                          | {{ sharedState.editSelectedOptionsLabel }}
+                      p
+                        a(href='#', @click='removeCartItem(item)')
+                          i.fa.fa-trash-o
+                          | {{ sharedState.removeFromCartLabel }}
+                    .col-xs-4.vertical-center
+                      p
+                        strong
+                          | {{ item.projectName }} ({{ item.designName }})
+                      p
+                        | {{ sharedState.templateLabel}}: {{ item.caseTemplate }}
+                      p.text-light
+                        | {{ item.fileID }}
+                      p
+                        a(href='#', @click='toggleSelectedOptionsOnCartItem(item)')
+                          span(v-if='!item.showingSelectedOptionsOnCartItem')
+                            | {{ sharedState.showSelectedOptionsLabel }}
+                            i.fa.fa-chevron-down.ml-1
+                          span(v-else)
+                            | {{ sharedState.hideSelectedOptionsLabel }}
+                            i.fa.fa-chevron-up.ml-1
+                    .col-xs-4.col-xs-offset-1.vertical-center
+                      template(v-if="true")
+                        img(v-if="true", :src=' item.caseImg', style='width: 100%;')                    
+                  .row(v-show='item.showingSelectedOptionsOnCartItem')
+                    .col-xs-4.col-xs-offset-3
+                      ul.list-unstyled
+                        li(v-for='(key, val) in item.selectedProductOptionsObj[item.caseVersion]', v-if='item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "File ID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "File UUID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Design Name" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Store ID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Reorder"')
+                          | {{ item.selectedProductOptionsObj[item.caseVersion][key].option_name }}
+                          span.cart-selected-option
+                            span(v-if='item.selectedProductOptionsObj[item.caseVersion][key].variant_id')
+                              | {{ item.selectedProductOptionsObj[item.caseVersion][key].variant_name }}
+                            span(v-else)
+                              | {{ item.selectedProductOptionsObj[item.caseVersion][key].value }}
+                  .row
+                    hr.my-4
+          .row(v-if='!currentFileIsInCart && sharedState.currentCartItem.fileID === sharedState.currentDesign.currentRev.fileID')
+            .col-xs-offset-1.col-xs-10
+              .row.p-2(style='border: 1px solid #000;')
+                .col-xs-12.text-center.vertical-center
+                  h4
+                    | {{sharedState.ordersPlacedTodayMessage}}
+                    strong
+                      |  {{sharedState.shipDate}}
+                .col-xs-3.vertical-center
+                  img(v-if="filterOutIsLid(sharedState.currentDesign.currentRev.layers).length <= 1", :src='sharedState.currentDesign.currentRev.snapshot', style='width: 100%;')
+                  div.checkoutImages(v-else, v-for="layer in filterOutIsLid(sharedState.currentDesign.currentRev.layers)")
+                    img(:src='layer.snapShot')
+                    div {{layer.name}}
+                .col-xs-3.vertical-center.py-2
+                  p
+                    span.text-light
+                      | {{ sharedState.fileidLabel }}:
+                    | {{ sharedState.currentDesign.currentRev.fileID }}
+                  p
+                    span.text-light
+                      | {{ sharedState.projectNameLabel }}:
+                    br
+                    | {{sharedState.currentDesign.name}} ({{sharedState.currentDesign.currentRev.name}})
+                  p
+                    span.text-light
+                      | {{ sharedState.caseTemplateLabel }}:
+                    br
+                    | {{ sharedState.case.isCustom ? 'Custom' : sharedState.case.name }}
+                .col-xs-3.vertical-center
+                  div(v-if='privateState.selectedCaseData && privateState.selectedCaseData.product')
+                    p.my-0
+                      | {{ privateState.caseVersion === privateState.caseVersions.foamOnly.name ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                      | {{ sharedState.priceLabel.toLowerCase() }}:
+                    h4.mb-2.mt-0
+                      strong(data-cypress="base-price") {{ currencyFormatted(privateState.estimatedPrice, cartCurrency) }}
+                    div(v-if='privateState.trayPricingVariant.variant_name && privateState.trayPricingVariant.variant_name !== "None"')
+                          p.my-0
+                            | {{ privateState.trayPricingVariant.variant_name }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.trayPricingVariant.modifier, cartCurrency) }}
+                          hr
+                          p.my-0
+                            | {{ sharedState.totalLabel }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }}
+                  h5(v-else)
+                    div(v-if='privateState.hasOnlyFoam')
+                      p
+                        | {{ sharedState.customFoamOnlyLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.foamOnly.productData.base_price, cartCurrency) }}
+                    div(v-else)
+                      p.my-0
+                        | {{ sharedState.caseAndCustomFoamLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.caseAndFoam.productData.base_price, cartCurrency) }}
+                      p.my-0
+                        | {{ sharedState.customFoamOnlyLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.foamOnly.productData.base_price, cartCurrency) }}
+
+                .col-xs-3.vertical-center
+                  p(v-if='!privateState.hasOnlyFoam && privateState.caseVersion !== privateState.caseVersions.foamOnly.name')
+                    img(:src='sharedState.case.csCartMainImg', style='width: 100%;')
+              .row.py-4
+                .col-xs-12.text-center.vertical-center
+                  span(v-if='!privateState.hasOnlyFoam')
+                    h4 {{sharedState.whichCaseVersionLabel}}
+                    a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.caseAndFoam.name)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.caseAndFoam.name)}", data-cypress="case-and-foam-button")
+                      | {{sharedState.caseAndCustomFoamLabel}}
+                    span {{sharedState.orLabel}}
+                  a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.foamOnly.name)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.foamOnly.name), 'disabled': privateState.hasOnlyFoam}", data-cypress="foam-only-button")
+                    | {{sharedState.customFoamOnlyLabel}}
+              .row(v-if='privateState.caseVersion')
+                .col-xs-12
+                  .row(data-cypress="order-options")
+                    .col-xs-12
+                      ol.p-0(style='list-style-type: none;')
+                        li.mb-4(v-for='(optionIdx, option) in privateState.sortedOptions')
+                          .row.mb-2(v-if='option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-4
+                              h4
+                                | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div
+                                span.cart-options-dropdown-input(data-toggle='dropdown')
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                  input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='addToSelectedProductOptions(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                          .row.mb-2(v-if='option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-4
+                              h4
+                                | 1a. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div
+                                span.cart-options-dropdown-input(data-toggle='dropdown')
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                  input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='addToSelectedProductOptions(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                          .row.mb-2(v-if='option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-4
+                              h4
+                                | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div(style="clear:both", data-cypress="failsafe-toggle")
+                                span.cart-options-dropdown-input(data-toggle='dropdown', style="float:right;width:calc(80% + 34px)")
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right; height:34px;', :class='{"has-error-checkout":privateState.failsafeHasError,"right":privateState.failsafeHasError}')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect( :placeholder='sharedState.failsafePlaceholderText', style='width:calc(100% - 34px);', v-model='privateState.failsafeValue', data-toggle='tooltip', data-placement='bottom', :class='{"has-error-checkout":privateState.failsafeHasError,"left":privateState.failsafeHasError}',  disabled)
+
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='setFailsafeValue(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                  .row(v-if='!privateState.failsafeSelected && privateState.failsafeValue != ""')
+                    .col-xs-offset-2.col-xs-8.text-left.checkbox(style='margin-top:0;')
+                      h3(style='margin-top:0;') {{sharedState.checkoutTermsTitle}}
+                      label
+                        input(type='checkbox', v-model='privateState.hasAcceptedTerms', style="top:1px;position:relative")
+                      | {{sharedState.checkoutTermsText}}
+                  br
+                  .row.mb-5.pb-5
+                    div.col-xs-4(style="margin-top:10px")
+                      input(type='checkbox', v-model='privateState.updateOnAddToCartBool', style="top:2px;position:relative;margin-right:4px;")
+                      span {{sharedState.makeChoicesDefault}}
+                    .col-xs-8
+                      div(v-if='sharedState.currentCartItem.fileUuid')
+                        div(v-if='privateState.caseVersion')
+                          .row
+                            .col-lg-8.col-md-8.text-right.vertical-center
+                              label.pr-1(for='cart-item-quantity') {{sharedState.quantityLabel}}:
+                              input(type='number', min=1, v-model='privateState.itemQuantity', id='cart-item-quantity', @change='updateEstimatedPrice()', style='width: 3em;')
+                            .col-lg-3.col-md-4.text-left.vertical-center
+                              span(v-if='!currentFileIsInCart')
+                                a.btn.btn-primary.btn-lg(href='#', @mouseover='checkIfFailsafeShouldError()' @click='addToCart({edit: false})', :disabled='!privateState.caseVersion || !privateState.failsafeSelected && !privateState.hasAcceptedTerms', :data-hover-toggle='!privateState.failsafeSelected && !privateState.hasAcceptedTerms ? "tooltip" : ""', :data-original-title='privateState.failsafeValue != "" ? sharedState.checkoutTermsToolTip : sharedState.failsafeNoOptionChosenError')
+                                  | {{sharedState.addToCartLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                              span(v-else)
+                                a.btn.btn-primary.btn-md.mr-1(href='#', @click='addToCart({edit: true})', :disabled='!privateState.caseVersion')
+                                  | {{sharedState.saveItemLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                a.btn.btn-default(href='#', @click='cancelAddToCart')
+                                  | {{sharedState.cancelEditingLabel}}
+        .footer(slot='footer')
+          div(v-if='!sharedState.currentCartItem.fileUuid')
+            div(v-if='!sharedState.isAddingNewItemToCart')
+              .row
+                .col-xs-offset-2.col-xs-8
+                  div(v-if='sharedState.cartItems.length > 0')
+                    .row
+                      .col-xs-12.text-left
+                        h4
+                          | {{sharedState.totalLabel}}: {{ currencyFormatted(cartEstimatedPriceTotal, cartCurrency) }}
+                    .row
+                      .col-xs-7.text-left.vertical-center
+                        p
+                          a.btn.btn-default(href='#', @click='openProjectsList("true")')
+                            | {{sharedState.addAnotherCaseLabel}}
+                          a.btn.btn-default(href='#', v-if='sharedState.cartItems.length > 0', @click='clearCart')
+                            | {{sharedState.clearCartLabel}}
+                      .col-xs-5.text-right.vertical-center
+                        p
+                          span.copy-reorder(v-if='sharedState.currentUser.isAdmin', style="margin-right: 15px")
+                            a.btn.btn-info.btn-lg(@click.stop='copyReorderText') Copy Reorder Link
+                          a.btn.btn-primary.btn-lg(v-if='sharedState.cartItems.length > 0', href='#', @click='submitOrder')
+                            | {{sharedState.proceedToCheckoutLabel}}
+                    .row(v-if='sharedState.currentUser.isAdmin')
+                      .col-xs-12.text-center
+                        .form-group
+                          input.form-control(v-model='privateState.reorderLink', v-el:reorder-link, readonly='readonly', :type='!!privateState.reorderLink ? "text" : "hidden"')
+                  div(v-else)
+                    p.text-center.pt-5
+                      | {{sharedState.cartEmptyMessageLabel}}
+     
+        .content(slot='body' v-if='!sharedState.reOrder')
+          .row(v-for='item in sharedState.cartItems')
+            .col-xs-12
+              .row(v-if='item.fileID === sharedState.currentCartItem.fileID && item.fileUuid === sharedState.currentCartItem.fileUuid')
+                .col-xs-offset-1.col-xs-10
+                  .row.p-2(style='border: 1px solid #000;')
+                    .col-xs-3.vertical-center
+                      template(v-if="privateState.cartItemSnapshotsAndLayers[item.designId]")
+                        img(v-if="filterOutIsLid(privateState.cartItemSnapshotsAndLayers[item.designId].layers).length <= 1", :src='(item && privateState.cartItemSnapshotsAndLayers[item.designId].snapshot) ? privateState.cartItemSnapshotsAndLayers[item.designId].snapshot : "https://placehold.it/204x200"', style='width: 100%;')
+                        div.checkoutImages(v-else, v-for="layer in filterOutIsLid(privateState.cartItemSnapshotsAndLayers[item.designId].layers)")
+                          img(:src='layer.snapShot')
+                          div {{layer.name}}
+                    .col-xs-3.vertical-center.py-2
+                      p
+                        span.text-light
+                          | {{ sharedState.fileidLabel }}:
+                        br
+                        | {{ item.fileID }}
+                      p
+                        span.text-light
+                          | {{ sharedState.projectNameLabel }}:
+                        br
+                        | {{ item.projectName }} ({{ item.designName }})
+                      p
+                        span.text-light
+                          | {{ sharedState.caseTemplateLabel }}:
+                        br
+                        | {{ item.caseTemplate }}
+                    .col-xs-3.vertical-center
+                      div(v-if='privateState.selectedCaseData && privateState.selectedCaseData.product')
+                        p.my-0
+                          | {{ privateState.caseVersion === privateState.caseVersions.foamOnly.name ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                          | {{ sharedState.priceLabel.toLowerCase() }}:
+                        h4.mb-2.mt-0
+                          strong(data-cypress="base-price") {{ currencyFormatted(privateState.estimatedPrice, cartCurrency) }}
+                        div(v-if='privateState.trayPricingVariant.variant_name && privateState.trayPricingVariant.variant_name !== "None"')
+                          p.my-0
+                            | {{ privateState.trayPricingVariant.variant_name }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.trayPricingVariant.modifier, cartCurrency) }}
+                          hr
+                          p.my-0
+                            | {{ sharedState.totalLabel }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }}
+                    .col-xs-3.vertical-center
+                      p(v-if='!item.hasOnlyFoam && item.csCartMainImg && privateState.caseVersion !== privateState.caseVersions.foamOnly.name')
+                        img(:src='item.csCartMainImg', style='width: 100%;')
+                .col-xs-10.col-xs-offset-1
+                  .row.py-4
+                    .col-xs-12.text-center.vertical-center
+                      span(v-if='!item.hasOnlyFoam')
+                        p {{sharedState.whichCaseVersionLabel}}
+                        a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.caseAndFoam.name, item)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.caseAndFoam.name)}")
+                          | {{sharedState.caseAndCustomFoamLabel}}
+                        span {{sharedState.orLabel}}
+                      a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.foamOnly.name, item)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.foamOnly.name), 'disabled': item.hasOnlyFoam}")
+                        | {{sharedState.customFoamOnlyLabel}}
+                  .row(v-if='privateState.caseVersion')
+                    .col-xs-12
+                      .row
+                        .col-xs-12
+                          ol.p-0(style='list-style-type: none;')
+                            li.mb-4(v-for='(optionIdx, option) in privateState.sortedOptions')
+                              .row.mb-2(v-if='option.comment.toLowerCase() != "choose your foam color"')
+                                .col-xs-4
+                                  h4
+                                    | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                                .col-xs-4
+                                  p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                      | {{sharedState.moreInfoLabel}}
+                                      i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                                .col-xs-4.px-0
+                                  div
+                                    span.cart-options-dropdown-input(data-toggle='dropdown')
+                                      button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false')
+                                        span.caret
+                                        span.sr-only Toggle Dropdown
+                                      input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                      input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                    ul.dropdown-menu(style='left:auto;right:0')
+                                      li(v-for='variant in sortedVariants(option)')
+                                        a(href='#', @click='addToSelectedProductOptions(option, variant, true, item)')
+                                          | {{ formattedVariant(variant, cartCurrency) }}
+                              .row(v-if='option.comment.toLowerCase() != "choose your foam color"')
+                                .col-xs-7
+                                  div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    | {{{optionDescription(option)}}}
+                                .col-xs-5
+                                  p(v-if='optionImg(option)')
+                                    img(:src='optionImg(option)', style='width: 100%;')
+                              .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() != "choose your foam color" ')
+                                .col-xs-10.col-xs-offset-1
+                                  div.p-3.cart-option-more-info
+                                    | {{{optionMoreInfo(option)}}}
+                              .row.mb-2(v-if='option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-4
+                                  h4
+                                    | 1a. {{ option.option_name }}
+                                .col-xs-4
+                                  p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                      | {{sharedState.moreInfoLabel}}
+                                      i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                                .col-xs-4.px-0
+                                  div
+                                    span.cart-options-dropdown-input(data-toggle='dropdown')
+                                      button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                        span.caret
+                                        span.sr-only Toggle Dropdown
+                                      input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                      input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                    ul.dropdown-menu(style='left:auto;right:0')
+                                      li(v-for='variant in sortedVariants(option)')
+                                        a(href='#', @click='addToSelectedProductOptions(option, variant, true, item)')
+                                          | {{ formattedVariant(variant, cartCurrency) }}
+                              .row(v-if='option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-7
+                                  div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                    | {{{optionDescription(option)}}}
+                                .col-xs-5
+                                  p(v-if='optionImg(option)')
+                                    img(:src='optionImg(option)', style='width: 100%;')
+                              .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "choose your foam color" && item.topGuardSelected')
+                                .col-xs-10.col-xs-offset-1
+                                  div.p-3.cart-option-more-info
+                                    | {{{optionMoreInfo(option)}}}
+                      .row(v-if='!item.failsafeSelected')
+                        .col-xs-offset-2.col-xs-8.text-left.checkbox(style='margin-top:0;')
+                          h3(style='margin-top:0;') {{sharedState.checkoutTermsTitle}}
+                          label
+                            input(type='checkbox', v-model='item.hasAcceptedTerms' , style="top:1px;position:relative")
+                          | {{sharedState.checkoutTermsText}}
+                      br
+                      .row.mb-5.pb-5
+                        div.col-xs-4(style="margin-top:10px")
+                          input(type='checkbox', v-model='privateState.updateOnAddToCartBool', style="top:2px;position:relative;margin-right:4px;")
+                          span {{sharedState.makeChoicesDefault}}
+                        .col-xs-8
+                          div(v-if='sharedState.currentCartItem.fileUuid')
+                            div(v-if='privateState.caseVersion')
+                              .row
+                                .col-lg-8.col-md-8.text-right.vertical-center
+                                  label.pr-1(for='cart-item-quantity') {{sharedState.quantityLabel}}:
+                                  input(type='number', min=1, v-model='privateState.itemQuantity', id='cart-item-quantity', @change='updateEstimatedPrice(item)', style='width: 3em;')
+                                .col-lg-3.col-md-4.text-left.vertical-center
+                                  span(v-if='!currentFileIsInCart')
+                                    a.btn.btn-primary.btn-lg(href='#', @click='addToCart({edit: false})', :disabled='!privateState.caseVersion')
+                                      | {{sharedState.addToCartLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                  span(v-else)
+                                    a.btn.btn-primary.btn-md.mr-1(href='#', @click='addToCart({edit: true},item)', :disabled='!privateState.caseVersion || !item.failsafeSelected && !item.hasAcceptedTerms', :data-hover-toggle='!item.failsafeSelected && !item.hasAcceptedTerms ? "tooltip" : ""', :data-original-title='sharedState.checkoutTermsToolTip')
+                                      | {{sharedState.saveItemLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                    a.btn.btn-default(href='#', @click='cancelAddToCart')
+                                      | {{sharedState.cancelEditingLabel}}
+              div.row(v-else)
+                .col-xs-offset-1.col-xs-10(v-if='!sharedState.isAddingNewItemToCart')
+                  .row
+                    .col-xs-3.vertical-center
+                      div(v-if='(privateState.trayPricingVariant.variant_name && privateState.trayPricingVariant.variant_name === "None")||(item.trayPricingVariant.variant_name && item.trayPricingVariant.variant_name === "None")')
+                        h3.my-0.pb-1
+                          | {{ item.quantity }} x {{ currencyFormatted(item.estimatedPrice / item.quantity, item.currency) }}
+                        p.mb-3
+                          | {{ (item.caseVersion === privateState.caseVersions.foamOnly.name) ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                      div(v-else)
+                        h3.my-0.pb-1
+                          | {{ item.quantity }} x {{ currencyFormatted(item.estimatedPrice / item.quantity, item.currency) }}
+                        p.mb-2
+                          | {{ (item.caseVersion === privateState.caseVersions.foamOnly.name) ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                        h3.my-0.pb-1
+                          | {{ currencyFormatted(item.trayPricingVariant.modifier, cartCurrency) }}
+                        p.mb-3
+                          | {{ item.trayPricingVariant.variant_name }}
+
+                      p
+                        a(href='#', @click='openCartItem(item)')
+                          i.fa.fa-pencil
+                          | {{ sharedState.editSelectedOptionsLabel }}
+                      p
+                        a(href='#', @click='removeCartItem(item)')
+                          i.fa.fa-trash-o
+                          | {{ sharedState.removeFromCartLabel }}
+                    .col-xs-4.vertical-center
+                      p
+                        strong
+                          | {{ item.projectName }} ({{ item.designName }})
+                      p
+                        | {{ sharedState.templateLabel}}: {{ item.caseTemplate }}
+                      p.text-light
+                        | {{ item.fileID }}
+                      p
+                        a(href='#', @click='toggleSelectedOptionsOnCartItem(item)')
+                          span(v-if='!item.showingSelectedOptionsOnCartItem')
+                            | {{ sharedState.showSelectedOptionsLabel }}
+                            i.fa.fa-chevron-down.ml-1
+                          span(v-else)
+                            | {{ sharedState.hideSelectedOptionsLabel }}
+                            i.fa.fa-chevron-up.ml-1
+                    .col-xs-4.col-xs-offset-1.vertical-center
+                      template(v-if="privateState.cartItemSnapshotsAndLayers[item.designId]")
+                        img(v-if="filterOutIsLid(privateState.cartItemSnapshotsAndLayers[item.designId].layers).length <= 1", :src='(item && privateState.cartItemSnapshotsAndLayers[item.designId].snapshot) ? privateState.cartItemSnapshotsAndLayers[item.designId].snapshot : "https://placehold.it/204x200"', style='width: 100%;')
+                        div.checkoutImages(v-else, v-for="layer in filterOutIsLid(privateState.cartItemSnapshotsAndLayers[item.designId].layers||[])")
+                          img(:src='layer.snapShot')
+                          div {{layer.name}}
+                  .row(v-show='item.showingSelectedOptionsOnCartItem')
+                    .col-xs-4.col-xs-offset-3
+                      ul.list-unstyled
+                        li(v-for='(key, val) in item.selectedProductOptionsObj[item.caseVersion]', v-if='item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "File ID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "File UUID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Design Name" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Store ID" && item.selectedProductOptionsObj[item.caseVersion][key].option_name !== "Reorder"')
+                          | {{ item.selectedProductOptionsObj[item.caseVersion][key].option_name }}
+                          span.cart-selected-option
+                            span(v-if='item.selectedProductOptionsObj[item.caseVersion][key].variant_id')
+                              | {{ item.selectedProductOptionsObj[item.caseVersion][key].variant_name }}
+                            span(v-else)
+                              | {{ item.selectedProductOptionsObj[item.caseVersion][key].value }}
+                  .row
+                    hr.my-4
+          .row(v-if='!currentFileIsInCart && sharedState.currentCartItem.fileID === sharedState.currentDesign.currentRev.fileID')
+            .col-xs-offset-1.col-xs-10
+              .row.p-2(style='border: 1px solid #000;')
+                .col-xs-12.text-center.vertical-center
+                  h4
+                    | {{sharedState.ordersPlacedTodayMessage}}
+                    strong
+                      |  {{sharedState.shipDate}}
+                .col-xs-3.vertical-center
+                  img(v-if="filterOutIsLid(sharedState.currentDesign.currentRev.layers).length <= 1", :src='sharedState.currentDesign.currentRev.snapshot', style='width: 100%;')
+                  div.checkoutImages(v-else, v-for="layer in filterOutIsLid(sharedState.currentDesign.currentRev.layers)")
+                    img(:src='layer.snapShot')
+                    div {{layer.name}}
+                .col-xs-3.vertical-center.py-2
+                  p
+                    span.text-light
+                      | {{ sharedState.fileidLabel }}:
+                    | {{ sharedState.currentDesign.currentRev.fileID }}
+                  p
+                    span.text-light
+                      | {{ sharedState.projectNameLabel }}:
+                    br
+                    | {{sharedState.currentDesign.name}} ({{sharedState.currentDesign.currentRev.name}})
+                  p
+                    span.text-light
+                      | {{ sharedState.caseTemplateLabel }}:
+                    br
+                    | {{ sharedState.case.isCustom ? 'Custom' : sharedState.case.name }}
+                .col-xs-3.vertical-center
+                  div(v-if='privateState.selectedCaseData && privateState.selectedCaseData.product')
+                    p.my-0
+                      | {{ privateState.caseVersion === privateState.caseVersions.foamOnly.name ? sharedState.customFoamOnlyLabel : sharedState.caseAndCustomFoamLabel }}
+                      | {{ sharedState.priceLabel.toLowerCase() }}:
+                    h4.mb-2.mt-0
+                      strong(data-cypress="base-price") {{ currencyFormatted(privateState.estimatedPrice, cartCurrency) }}
+                    div(v-if='privateState.trayPricingVariant.variant_name && privateState.trayPricingVariant.variant_name !== "None"')
+                          p.my-0
+                            | {{ privateState.trayPricingVariant.variant_name }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.trayPricingVariant.modifier, cartCurrency) }}
+                          hr
+                          p.my-0
+                            | {{ sharedState.totalLabel }}:
+                          h4.mb-2.mt-0
+                            strong(data-cypress="base-price") {{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }}
+                  h5(v-else)
+                    div(v-if='privateState.hasOnlyFoam')
+                      p
+                        | {{ sharedState.customFoamOnlyLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.foamOnly.productData.base_price, cartCurrency) }}
+                    div(v-else)
+                      p.my-0
+                        | {{ sharedState.caseAndCustomFoamLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.caseAndFoam.productData.base_price, cartCurrency) }}
+                      p.my-0
+                        | {{ sharedState.customFoamOnlyLabel }} {{ sharedState.baseLabel.toLowerCase() }} {{ sharedState.priceLabel.toLowerCase() }}:
+                      h4.mb-2.mt-0
+                        strong(data-cypress="base-price") {{ currencyFormatted(privateState.caseVersions.foamOnly.productData.base_price, cartCurrency) }}
+
+                .col-xs-3.vertical-center
+                  p(v-if='!privateState.hasOnlyFoam && privateState.caseVersion !== privateState.caseVersions.foamOnly.name')
+                    img(:src='sharedState.case.csCartMainImg', style='width: 100%;')
+              .row.py-4
+                .col-xs-12.text-center.vertical-center
+                  span(v-if='!privateState.hasOnlyFoam')
+                    h4 {{sharedState.whichCaseVersionLabel}}
+                    a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.caseAndFoam.name)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.caseAndFoam.name)}", data-cypress="case-and-foam-button")
+                      | {{sharedState.caseAndCustomFoamLabel}}
+                    span {{sharedState.orLabel}}
+                  a.btn.btn-info.btn-lg.mx-2(@click='chooseVersion(privateState.caseVersions.foamOnly.name)', :class="{'active':(privateState.caseVersion === privateState.caseVersions.foamOnly.name), 'disabled': privateState.hasOnlyFoam}", data-cypress="foam-only-button")
+                    | {{sharedState.customFoamOnlyLabel}}
+              .row(v-if='privateState.caseVersion')
+                .col-xs-12
+                  .row(data-cypress="order-options")
+                    .col-xs-12
+                      ol.p-0(style='list-style-type: none;')
+                        li.mb-4(v-for='(optionIdx, option) in privateState.sortedOptions')
+                          .row.mb-2(v-if='option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-4
+                              h4
+                                | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div
+                                span.cart-options-dropdown-input(data-toggle='dropdown')
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                  input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='addToSelectedProductOptions(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() != "choose your foam color" && option.comment.toLowerCase() != "failsafe design protection"')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                          .row.mb-2(v-if='option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-4
+                              h4
+                                | 1a. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div
+                                span.cart-options-dropdown-input(data-toggle='dropdown')
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right;')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect(v-if='privateState.caseVersion === privateState.caseVersions.foamOnly.name', :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.foamOnly[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.foamOnly[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                  input.form-control.noselect(v-else, :placeholder='option.option_name', value='{{privateState.selectedProductOptionsObj.caseAndFoam[option.option_id] ? formattedVariant(privateState.selectedProductOptionsObj.caseAndFoam[option.option_id], cartCurrency) : ""}}', data-toggle='tooltip', data-placement='bottom', disabled)
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='addToSelectedProductOptions(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "choose your foam color" && privateState.topGuardSelected')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                          .row.mb-2(v-if='option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-4
+                              h4
+                                | {{ optionIdx == 0 ? optionIdx + 1 : optionIdx }}. {{ option.option_name }}
+                            .col-xs-4
+                              p(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                a.btn.btn-default(href='#', @click='optionToggleMoreInfo(option)')
+                                  | {{sharedState.moreInfoLabel}}
+                                  i.fa.pl-1(:class='{ "fa-chevron-down": !optionShouldShowMoreInfo(option), "fa-chevron-up": optionShouldShowMoreInfo(option) }')
+                            .col-xs-4.px-0
+                              div(style="clear:both", data-cypress="failsafe-toggle")
+                                span.cart-options-dropdown-input(data-toggle='dropdown', style="float:right;width:calc(80% + 34px)")
+                                  button.btn.btn-default.dropdown-toggle(type='button', aria-haspopup='true', aria-expanded='false', style='float: right; height:34px;', :class='{"has-error-checkout":privateState.failsafeHasError,"right":privateState.failsafeHasError}')
+                                    span.caret
+                                    span.sr-only Toggle Dropdown
+                                  input.form-control.noselect( :placeholder='sharedState.failsafePlaceholderText', style='width:calc(100% - 34px);', v-model='privateState.failsafeValue', data-toggle='tooltip', data-placement='bottom', :class='{"has-error-checkout":privateState.failsafeHasError,"left":privateState.failsafeHasError}',  disabled)
+
+                                ul.dropdown-menu(style='left:auto;right:0')
+                                  li(v-for='variant in sortedVariants(option)')
+                                    a(href='#', @click='setFailsafeValue(option, variant, true)')
+                                      | {{ formattedVariant(variant, cartCurrency) }}
+                          .row(v-if='option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-7
+                              div.p-1.cart-option-description(v-if='option && option.comment.toLowerCase() && optionDescription(option)')
+                                | {{{optionDescription(option)}}}
+                            .col-xs-5
+                              p(v-if='optionImg(option)')
+                                img(:src='optionImg(option)', style='width: 100%;')
+                          .row(v-if='optionShouldShowMoreInfo(option) && option.comment.toLowerCase() == "failsafe design protection"')
+                            .col-xs-10.col-xs-offset-1
+                              div.p-3.cart-option-more-info
+                                | {{{optionMoreInfo(option)}}}
+                  .row(v-if='!privateState.failsafeSelected && privateState.failsafeValue != ""')
+                    .col-xs-offset-2.col-xs-8.text-left.checkbox(style='margin-top:0;')
+                      h3(style='margin-top:0;') {{sharedState.checkoutTermsTitle}}
+                      label
+                        input(type='checkbox', v-model='privateState.hasAcceptedTerms', style="top:1px;position:relative")
+                      | {{sharedState.checkoutTermsText}}
+                  br
+                  .row.mb-5.pb-5
+                    div.col-xs-4(style="margin-top:10px")
+                      input(type='checkbox', v-model='privateState.updateOnAddToCartBool', style="top:2px;position:relative;margin-right:4px;")
+                      span {{sharedState.makeChoicesDefault}}
+                    .col-xs-8
+                      div(v-if='sharedState.currentCartItem.fileUuid')
+                        div(v-if='privateState.caseVersion')
+                          .row
+                            .col-lg-8.col-md-8.text-right.vertical-center
+                              label.pr-1(for='cart-item-quantity') {{sharedState.quantityLabel}}:
+                              input(type='number', min=1, v-model='privateState.itemQuantity', id='cart-item-quantity', @change='updateEstimatedPrice()', style='width: 3em;')
+                            .col-lg-3.col-md-4.text-left.vertical-center
+                              span(v-if='!currentFileIsInCart')
+                                a.btn.btn-primary.btn-lg(href='#', @mouseover='checkIfFailsafeShouldError()' @click='addToCart({edit: false})', :disabled='!privateState.caseVersion || !privateState.failsafeSelected && !privateState.hasAcceptedTerms', :data-hover-toggle='!privateState.failsafeSelected && !privateState.hasAcceptedTerms ? "tooltip" : ""', :data-original-title='privateState.failsafeValue != "" ? sharedState.checkoutTermsToolTip : sharedState.failsafeNoOptionChosenError')
+                                  | {{sharedState.addToCartLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                              span(v-else)
+                                a.btn.btn-primary.btn-md.mr-1(href='#', @click='addToCart({edit: true})', :disabled='!privateState.caseVersion')
+                                  | {{sharedState.saveItemLabel}} ({{ currencyFormatted(privateState.purchaseTotal, cartCurrency) }})
+                                a.btn.btn-default(href='#', @click='cancelAddToCart')
+                                  | {{sharedState.cancelEditingLabel}}
+        
+    #confirm-delete-design-modal(v-cloak)
+      modal(:show.sync='sharedState.showDeleteRevisionModal', container="row")
+        h3.confirm(slot='header', class='row')
+          | {{ sharedState.confirmLabel }} {{ sharedState.deleteLabel }}
+        .content(slot='body', class='row')
+          .alert(role='alert', v-if='privateState.deleteRevisionError', :class='{"alert-success":privateState.deleteRevisionSuccessState,"alert-danger":privateState.deleteRevisionErrorState}')
+            | {{ privateState.deleteRevisionErrorMessage }}
+          p
+            | {{ sharedState.areYouSureHardDeleteDesign }}
+          h4
+            i &quot;{{ sharedState.currentDesign.currentRev.name }}&quot;
+        div(slot='footer', class='row')
+          a.btn.btn-default(@click='sharedState.showDeleteRevisionModal = false')
+            | {{sharedState.cancelLabel}}
+          a.btn.btn-danger(@click='deleteRevision')
+            | {{sharedState.deleteLabel}}
+
+    #confirm-remove-project-modal(v-cloak)
+      modal(:show.sync='sharedState.showRemoveProjectModal')
+        h3.confirm(slot='header', class='row')
+          | {{ sharedState.removeLabel }}
+        .content(slot='body', class='row')
+          p
+            | {{ privateState.confirmRemoveProjectMessage }}
+          h4
+            i &quot;{{ sharedState.currentDesign.name }}&quot;
+        div(slot='footer', class='row')
+          a.btn.btn-default(@click='sharedState.showRemoveProjectModal = false')
+            | {{sharedState.cancelLabel}}
+          a.btn.btn-danger(@click='removeProject')
+            | {{sharedState.deleteLabel}}
+
+    #layer-builder-modal
+      modal(:show.sync='modalOpen', container='modal-xl')
+        h3(slot='header')
+          | {{ sharedState.trayBuilderLabel }} ({{ sharedState.editTraysLabel | lowercase}}) - {{sharedState.case.name}}
+
+        #tray-builder.container-fluid(slot='body', :style="{ 'min-height': frameHeight + 'px' }")
+          #case-lid.row(v-if="!!suppressLidForNow")
+            .col-sm-12
+              .row.layer-cfg(v-for="tray in layers", v-if="tray.isLid")
+                .col-sm-12
+                  // support for case lid goes here lid
+          #case-body.row.flex-vcenter-content
+            .col-xs-12(style="max-height: inherit;")
+              svg(width="100%", height="100%", :view-box.camel="viewBox", style="max-height: inherit; max-width: inherit;", @mousemove="dragResize", v-el:svg)
+                defs
+                  filter#white-background
+                    feflood(flood-color="white")
+                    fecomposite(in="SourceGraphic")
+                  filter#glow
+                    fegaussianblur.blur(result="coloredBlur", stddeviation="6")
+                    femerge
+                      femergenode(in="coloredBlur")
+                      femergenode(in="SourceGraphic")
+                polygon(class="core-foam", :points="mainShellPoly", v-el:main)
+                g(title="In Case Shapes")
+                  template(v-for="shape in cutouts")
+                    polygon.case-cutout(:points="shape.polyPoints", :title="shape.name")
+                template(v-for="tray in layers", v-if="!tray.isLid")
+                  g(:title="tray.name", :stack="tray.stackOrder" @mousedown="editTray(tray, $event)", :class="{'active': vData[tray.id].active}")
+                    polygon.layer-foam(:points="vData[tray.id].polyPoints")
+                    template(v-for="shape in vData[tray.id].shapes")
+                      polygon.ghost-shape(:points="shape.polyPoints", :class='{"finger-notch": shape.isFingerNotch, "warning": (shape.depth > vData[tray.id].depth || !!shape.warning)}')
+                    polygon.layer-buffer(:points="vData[tray.id].bufferPolyPoints", v-if="($index + 1) < layers.length", @mousedown="initResize($event, tray)", @mousemove="dragResize($event, tray)")
+                    text.resizing-icon.noselect(v-if="($index + 1) < layers.length", :x="vData[tray.id].bufferCenter.X", :y="vData[tray.id].bufferCenter.Y", dx="-20", dy="2", @mousedown="initResize($event, tray)", @mousemove="dragResize($event, tray)")
+                      | &#xf0de;
+                    text.resizing-icon.noselect(v-if="($index + 1) < layers.length", :x="vData[tray.id].bufferCenter.X", :y="vData[tray.id].bufferCenter.Y", dx="5", dy="-10", @mousedown="initResize($event, tray)", @mousemove="dragResize($event, tray)")
+                      | &#xf0dd;
+
+                <!-- upper length dimension -->
+                line.dimension.left-vertical(:x1="upperWidthDimLineP1.x", :y1="upperWidthDimLineP1.y - 50", :x2="upperWidthDimLineP1.x", :y2="upperWidthDimLineP1.y - 7")
+                line.dimension.left-arrow-top(:x1="upperWidthDimLineP1.x", :y1="upperWidthDimLineP1.y - 30", :x2="upperWidthDimLineP1.x + 15", :y2="upperWidthDimLineP1.y - 36")
+                line.dimension.left-arrow-bottom(:x1="upperWidthDimLineP1.x", :y1="upperWidthDimLineP1.y - 30", :x2="upperWidthDimLineP1.x + 15", :y2="upperWidthDimLineP1.y - 23")
+                line.dimension.line(:x1="upperWidthDimLineP1.x", :y1="upperWidthDimLineP1.y - 30", :x2="upperWidthDimLineP2.x", :y2="upperWidthDimLineP2.y - 30")
+                line.dimension.right-arrow-top(:x1="upperWidthDimLineP2.x", :y1="upperWidthDimLineP2.y - 30", :x2="upperWidthDimLineP2.x - 15", :y2="upperWidthDimLineP2.y - 36")
+                line.dimension.right-arrow-bottom(:x1="upperWidthDimLineP2.x", :y1="upperWidthDimLineP2.y - 30", :x2="upperWidthDimLineP2.x - 15", :y2="upperWidthDimLineP2.y - 23")
+                line.dimension.right-vertical(:x1="upperWidthDimLineP2.x", :y1="upperWidthDimLineP2.y - 50", :x2="upperWidthDimLineP2.x", :y2="upperWidthDimLineP2.y - 7")
+                text.dimension.upper-width(filter="url(#white-background)", :x="boxWidth / 2", :y="upperWidthDimLineP1.y - 30", dx="0", dy="10", :font-size="svgFontSize")
+                  | {{ sharedState.case.length | mcb_trans_units sharedState.currentUnit 4 true true }}
+
+                 <!-- lower length dimension -->
+                line.dimension.left-vertical(:x1="lowerWidthDimLineP1.x", :y1="lowerWidthDimLineP1.y + 50", :x2="lowerWidthDimLineP1.x", :y2="lowerWidthDimLineP1.y + 7")
+                line.dimension.left-arrow-top(:x1="lowerWidthDimLineP1.x", :y1="lowerWidthDimLineP1.y + 30", :x2="lowerWidthDimLineP1.x + 15", :y2="lowerWidthDimLineP1.y + 23")
+                line.dimension.left-arrow-bottom(:x1="lowerWidthDimLineP1.x", :y1="lowerWidthDimLineP1.y + 30", :x2="lowerWidthDimLineP1.x + 15", :y2="lowerWidthDimLineP1.y + 36")
+                line.dimension.line(:x1="lowerWidthDimLineP1.x", :y1="lowerWidthDimLineP1.y + 30", :x2="lowerWidthDimLineP2.x", :y2="lowerWidthDimLineP2.y + 30")
+                line.dimension.right-arrow-top(:x1="lowerWidthDimLineP2.x", :y1="lowerWidthDimLineP2.y + 30", :x2="lowerWidthDimLineP2.x - 15", :y2="lowerWidthDimLineP2.y + 23")
+                line.dimension.right-arrow-bottom(:x1="lowerWidthDimLineP2.x", :y1="lowerWidthDimLineP2.y + 30", :x2="lowerWidthDimLineP2.x - 15", :y2="lowerWidthDimLineP2.y + 36")
+                line.dimension.right-vertical(:x1="lowerWidthDimLineP2.x", :y1="lowerWidthDimLineP2.y + 50", :x2="lowerWidthDimLineP2.x", :y2="lowerWidthDimLineP2.y + 7")
+                text.dimension.lower-width(filter="url(#white-background)", :x="boxWidth / 2", :y="lowerWidthDimLineP1.y + 30", dx="0", dy="10", :font-size="svgFontSize")
+                  | {{ sharedState.case.lowerLength | mcb_trans_units sharedState.currentUnit 4 true true }}
+
+                <!-- side aggregate depth dimension -->
+                line.dimension.aggregate-depth.top.horizontal(:x1="upperWidthDimLineP2.x + 7", :y1="upperWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 75", :y2="upperWidthDimLineP2.y")
+                line.dimension.aggregate-depth.top.arrow.left(:x1="upperWidthDimLineP2.x + 50", :y1="upperWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 43", :y2="upperWidthDimLineP2.y + 15")
+                line.dimension.aggregate-depth.top.arrow.right(:x1="upperWidthDimLineP2.x + 50", :y1="upperWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 56", :y2="upperWidthDimLineP2.y + 15")
+                line.dimension.aggregate-depth.line(:x1="upperWidthDimLineP2.x + 50", :y1="upperWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 50", :y2="lowerWidthDimLineP2.y")
+                line.dimension.aggregate-depth.bottom.horizontal(:x1="lowerWidthDimLineP2.x + 7", :y1="lowerWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 75", :y2="lowerWidthDimLineP2.y")
+                line.dimension.aggregate-depth.bottom.arrow.left(:x1="upperWidthDimLineP2.x + 50", :y1="lowerWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 43", :y2="lowerWidthDimLineP2.y - 15")
+                line.dimension.aggregate-depth.bottom.arrow.right(:x1="upperWidthDimLineP2.x + 50", :y1="lowerWidthDimLineP2.y", :x2="upperWidthDimLineP2.x + 56", :y2="lowerWidthDimLineP2.y - 15")
+                text.dimension.aggregate-depth.space(filter="url(#white-background)", :x="upperWidthDimLineP2.x + 50", :y="boxHeight / 2", dx="-5", dy="5", :font-size="parseInt(svgFontSize) + 4 + 'px'")
+                  | &nbsp;&nbsp;&nbsp;
+                text.dimension.aggregate-depth(filter="url(#white-background)", :x="upperWidthDimLineP2.x + 50", :y="boxHeight / 2", :dx="0", dy="6", :font-size="svgFontSize")
+                  | {{ aggregateDepth | mcb_trans_units sharedState.currentUnit 4 true true }}
+
+                g(title="Layer Depth Dimensions")
+                  template(v-for="tray in layers", v-if="!tray.isLid")
+                    <!-- layer depth dimension -->
+                    line.dimension.layer-depth.top.horizontal(:x1="vData[tray.id].dimP1.x - 7", :y1="vData[tray.id].dimP1.y", :x2="vData[tray.id].dimP1.x - 75", :y2="vData[tray.id].dimP1.y")
+                    line.dimension.layer-depth.top.arrow.left(:x1="vData[tray.id].dimP1.x - 50", :y1="vData[tray.id].dimP1.y", :x2="vData[tray.id].dimP1.x - 56", :y2="vData[tray.id].dimP1.y + 15")
+                    line.dimension.layer-depth.top.arrow.right(:x1="vData[tray.id].dimP1.x - 50", :y1="vData[tray.id].dimP1.y", :x2="vData[tray.id].dimP1.x - 43", :y2="vData[tray.id].dimP1.y + 15")
+                    line.dimension.layer-depth.line(:x1="vData[tray.id].dimP1.x - 50", :y1="vData[tray.id].dimP1.y", :x2="vData[tray.id].dimP1.x - 50", :y2="vData[tray.id].dimP2.y")
+                    line.dimension.layer-depth.bottom.horizontal(:x1="vData[tray.id].dimP2.x - 7", :y1="vData[tray.id].dimP2.y", :x2="vData[tray.id].dimP1.x - 75", :y2="vData[tray.id].dimP2.y")
+                    line.dimension.layer-depth.bottom.arrow.left(:x1="vData[tray.id].dimP1.x - 50", :y1="vData[tray.id].dimP2.y", :x2="vData[tray.id].dimP1.x - 56", :y2="vData[tray.id].dimP2.y - 15")
+                    line.dimension.layer-depth.bottom.arrow.right(:x1="vData[tray.id].dimP1.x - 50", :y1="vData[tray.id].dimP2.y", :x2="vData[tray.id].dimP1.x - 43", :y2="vData[tray.id].dimP2.y - 15")
+                    text.dimension.layer-depth.space(filter="url(#white-background)", :x="vData[tray.id].dimP1.x - 75", :y="vData[tray.id].dimP1.y + ((vData[tray.id].dimP2.y - vData[tray.id].dimP1.y) / 2)", dx="18", dy="5", :font-size="parseInt(svgFontSize) + 4 + 'px'")
+                      | &nbsp;&nbsp;&nbsp;
+                    text.dimension.layer-depth(filter="url(#white-background)", :x="vData[tray.id].dimP1.x - 75", :y="vData[tray.id].dimP1.y + ((vData[tray.id].dimP2.y - vData[tray.id].dimP1.y) / 2)", :dx="25", dy="6", :font-size="svgFontSize")
+                      | {{ vData[tray.id].depth | mcb_trans_units sharedState.currentUnit 4 true true }}
+
+          #tray-details.row
+            .col-xs-12(style="padding-top: 15px")
+              .row.flex-row
+                .col-xs-6.flex-hcenter-content.fluid-height
+                  .layer-settings.flex-vspread-content
+                    .form-group.input-md.hidden
+                      label
+                        | {{ 'Stack' | translate_label }}
+                      span
+                        | {{ activeLayer.stackOrder }}
+                    .form-group.input-md
+                      label
+                        | {{ 'Name' | translate_label }}
+                      span
+                        | {{ activeLayer.name | translate_layer_name }} ({{ (vData[activeLayer.id] ? vData[activeLayer.id].shapesCount: 0) }} shapes)
+                    .form-group.input-md
+                      label
+                        | {{ 'Depth' | translate_label }}
+                      input.form-control.input-xs.depth(
+                        :readonly="!hasMultipleTrays",
+                        :value='activeLayer.depth | mcb_trans_units sharedState.currentUnit 4',
+                        @change='setTrayDepth(activeLayer, $event)',
+                        @keydown.up='activeLayer.name.toLowerCase() === "middle" ? incrementUp(activeLayer, $event) : incrementDown(activeLayer, $event)',
+                        @keydown.down='activeLayer.name.toLowerCase() === "middle" ? incrementDown(activeLayer, $event) : incrementUp(activeLayer, $event)',
+                        v-show="!resizing",
+                        v-el:depth,
+                        v-limit-numeric
+                      )
+                      input.form-control.input-xs.depth(
+                        readonly,
+                        :value='(vData[activeLayer.id] ? vData[activeLayer.id].depth : 0) | mcb_trans_units sharedState.currentUnit 4',
+                        v-show="resizing"
+                      )
+                    .form-group.input-md.hidden
+                      label
+                        | {{ 'ID' | translate_label }}
+                      span
+                        | {{ activeLayer.id }}
+                    .actions.form-group.input-md
+                      label.pull-left
+                        | {{ 'Actions' | translate_label }}
+                      .flex-hspread-content
+                        span.text-center(data-toggle='tooltip', data-original-title="{{ tips.up }}", v-if='hasMultipleTrays && !activeLayer.isTop')
+                          a.icon-action(href="#", @click.prevent='moveTrayUp(activeLayer)')
+                            i.fa.fa-lg.fa-arrow-up
+                            p {{ labels.up | capitalize }}
+                        span.text-center(data-toggle='tooltip', data-original-title="{{ tips.down }}", v-if='hasMultipleTrays && !activeLayer.isBase')
+                          a.icon-action(href="#", @click.prevent='moveTrayDown(activeLayer)')
+                            i.fa.fa-lg.fa-arrow-down
+                            p {{ labels.down | capitalize }}
+                        span.text-center(data-toggle='tooltip', data-original-title="{{ tips.split }}", v-if='(vData[activeLayer.id] && vData[activeLayer.id].splittable)')
+                          a.icon-action(href="#", @click='splitTray(activeLayer)')
+                            i.fa.fa-lg.fa-scissors.fa-rotate-180
+                            p {{ labels.split | capitalize }}
+                        span.text-center(data-toggle='tooltip', data-original-title="{{ tips.merge }}", v-if='hasMultipleTrays && !activeLayer.isBase')
+                          a.icon-action(href="#", @click.prevent='mergeTray(activeLayer)')
+                            i.fa.fa-lg.fa-compress
+                            p {{ labels.merge | capitalize }}
+                        span.text-center(data-toggle='tooltip', data-original-title="{{ tips.edit }}")
+                          a.icon-action(href="#", @click.prevent='openTray(activeLayer)')
+                            i.fa.fa-lg.fa-pencil-square-o
+                            p {{ labels.edit | capitalize }}
+                .col-xs-6
+                  .row
+                    .col-xs-12.flex-hcenter-content
+                      .thumbnail
+                        a(href="#", @click='openTray(activeLayer)')
+                          img.tray-snapshot(:src="activeLayer.snapShot", style="max-height: 175px;")
+                  .row
+                    .col-xs-12.flex-hcenter-content
+                      .notes {{ activeLayer.stackOrder === 1 ? baseTrayThumbNote : trayThumbNote }}
+        div(slot='footer')
+
+    #public-design-email-modal(v-cloak)
+      modal(:show.sync='sharedState.showPublicDesignCandidateModal', container='modal-sm', :divider='true', :modal-container-style='modalOverrideSize' )
+        .content(slot='absolute')
+        h3(slot='header')
+          | Public Design Email
+
+        .content(slot='body')
+          div(style='width:80%;margin: 10px auto 0 auto;')
+            div(style='display:inline-block; width:50%; padding-left:5px')
+              mcb-switch( id='scheduled-switch', text-right='Scheduled', :checked.sync='isScheduled', checked-class='label-success', class='pull-left')
+            div(style='display:inline-block; width:50%;padding-right:5px')
+              mcb-switch(id='sent-switch', text-right='Sent', :checked.sync='isSent', checked-class='label-success', class='pull-right')
+            datepicker(:value.sync='scheduledSendDate', style='margin-top:25px;margin-bottom: 5px;', :disabled='scheduledSendDateDisabled')
+            div.form-group(:class="{'has-error': firstName.hasError}", v-if="firstName.show",style='margin-top:15px')
+              label(for='nameOfPersonGettingEmailed')
+                | First Name
+                span.error-message(v-if="firstName.hasError")
+                  | *Required
+              input.form-control.input-lg( type='text', :placeholder='bob',v-model='firstName.value', id='nameOfPersonGettingEmailed', @keyup='validate(true,"firstName")')
+              span.footer(v-if='firstName.footer', style="display:inline-block;padding-top:2px;font-size: 13px;") {{firstName.footer}}
+            div.form-group(:class="{'has-error': orderNumber.hasError}", v-if="orderNumber.show",style='margin-top:15px')
+              label(for='orderNumber')
+                | Order Number
+                span.error-message(v-if="orderNumber.hasError")
+                  | *Required
+              input.form-control.input-lg( type='text', :placeholder='bob',v-model='orderNumber.value', id='orderNumber', @keyup='validate(true,"orderNumber")')
+              span.footer(v-if='orderNumber.footer', style="display:inline-block;padding-top:2px;font-size: 13px;") {{orderNumber.footer}}
+        .content(slot='footer', class='fixed-bottom', style='margin-top: 10px;')
+          div.row(style='width:80%;margin: 0 auto;padding: 0 10px', v-if='sharedState.currentUser.isAdmin')
+            div.text-center(style='width:50%;display:inline-block; text-align:left')
+              a.btn.btn-danger#public-design-email-close-button( @click='close()')
+                | Close
+            div.text-center(style='width:50%;display:inline-block;text-align:right')
+              a.btn.btn-primary#public-design-email-apply-changes-button( @click='updateStatus()', :disabled='!canApplyChanges', @mouseover='validate(true)')
+                | Apply Changes
+
+    #export-pdf-design-modal(v-cloak)
+      modal(:show.sync='sharedState.showExportPdfDesignModal', :container='modalSize')
+        .content(slot='absolute')
+
+        h3(slot='header')
+          | Exports and Options:
+        .content(slot='body')
+          div.form-horizontal(v-if="sharedState.currentDesign.currentRev.adminExportPdfData && sharedState.currentDesign.currentRev.adminExportPdfData.length > 1")
+            div.form-group(style="width: 80%; margin-left: 10%")
+              label.control-label.title.col-xs-5(style="line-height: 34px; text-align: left; font-size: 18px")
+                | Select Order Variant:
+              .col-xs-7
+                select.form-control.input-lg(v-model="datasetLoaded.value", @change='loadPdfData()')
+                  option(v-for="(idx, opt) in sharedState.currentDesign.currentRev.adminExportPdfData", :value="opt.fileUuid", track-by="$index")
+                    | Option Set {{'#'+'123456789'[idx]}}
+            hr(style="margin: -5px 0 9px 10%; width: 80%;")
+
+          div.design-card-container
+            template(v-for="(index,section) in exportPdfFormData")
+              fieldset
+                legend
+                  span.title
+                    | {{section.title}}      
+                  span.title(v-if="section.title=='Top Tray'")  
+                    | Depth  {{sharedState.trayDepths[2]}} : Deepest {{sharedState.trayDeepest[2]}} Diff {{(parseFloat(sharedState.trayDepths[2]) - parseFloat(sharedState.trayDeepest[2])).toFixed(3)}}<br/>
+                  span(v-html="sharedState.suggestText[2]", v-if="section.title=='Top Tray'")
+                  span.title(v-if="section.title=='Middle Tray'")  
+                    | Depth  {{sharedState.trayDepths[1]}} : Deepest {{sharedState.trayDeepest[1]}} Diff {{(parseFloat(sharedState.trayDepths[1]) - parseFloat(sharedState.trayDeepest[1])).toFixed(3)}}<br/>
+                  span(v-html="sharedState.suggestText[1]", v-if="section.title=='Middle Tray'")
+                  span.title(v-if="section.title=='Bottom Tray'")  
+                    | Depth  {{sharedState.trayDepths[0]}} : Deepest {{sharedState.trayDeepest[0]}} Diff {{(parseFloat(sharedState.trayDepths[0]) - parseFloat(sharedState.trayDeepest[0])).toFixed(3)}}<br/>
+                  span(v-html="sharedState.suggestText[0]", v-if="section.title=='Bottom Tray'")
+                
+                form.col-xs-10.col-xs-offset-1
+                  template(v-for="(key,inputField) in section.data")
+
+                    div.form-group(v-if="key == 'actions'", :class="key | html_safe_space_to_dash")
+                      label Actions ({{inputField.length}})
+                      ul
+                        li(v-if="inputField.length < 1 && !sections[index].prompt")
+                          em
+                            | None
+                        template(v-for="opt in inputField", track-by="$index")
+                          li(:class="key + '-' + $index")
+                            label {{opt.note ? opt.action + ': ' + opt.note : opt.action}}
+                            span.pull-right(@click="removeAction(index, opt.action, $event)", style="cursor:pointer")
+                              i.fa.fa-close
+
+                    div.form-group(v-if="key == 'actions'", class="add-action-selector")
+                      div.add-action(v-show="!sections[index].prompt")
+                        label(for='add-action')
+                          | {{addAction.title}}
+                        select.form-control.input-lg(
+                          v-model='sections[index].value',
+                          v-on:change='insertAction(index, sections[index].value, $event)',
+                          :disabled="inputField.length >= maxActions"
+                        ) 
+                          option(value="-1", disabled, selected)
+                            | {{sharedState.pdSelectOne}}
+                          template(v-for="opt in addAction.options", track-by="$index")
+                            option(:value="$index", :disabled="isActionDisabled(index, opt.name)")
+                              | {{opt.name}}
+                      div.action-prompt.form-horizontal(v-show="!!sections[index].prompt")
+                        .form-group
+                          label.col-sm-5.control-label
+                            | {{getOptionName(sections[index].value)}}:
+                          .col-sm-7(:class="{'has-error':sections[index].promptError}")
+                            input.form-control.input-sm(v-model='sections[index].promptValue', @keyup="validatePrompt(index, $event)", @blur="validatePrompt(index, $event)", @keyup.enter="[validatePrompt(index, $event), insertAction(index, sections[index].value, $event)]")
+                            span.error-message(v-if="sections[index].promptError", style="position: absolute; top: 6px; right: 20px;") * Required
+                          label.col-sm-5.control-label(v-if="getOptionName(sections[index].value) === 'PadBuilder'")
+                            | Pad Material:
+                          .col-sm-7(:class="{'has-error':sections[index].promptError}")
+                            select.form-control(v-model='foamPadMaterial', v-if="getOptionName(sections[index].value) === 'PadBuilder'")
+                              option(value='{{foamPadMaterial}}', disabled, selected) {{foamPadMaterial}}
+                              option(value='1.7 Black PE') 1.7 Black PE
+                              option(value='6.0 Black TG') 6.0 Black TG
+                              option(value='6.0 Blue TG') 6.0 Blue TG
+                              option(value='6.0 Red TG') 6.0 Red TG
+                              option(value='6.0 Yellow TG') 6.0 Yellow TG
+                              
+                            input.form-control.input-sm(v-model='foamPadMaterial', v-if="getOptionName(sections[index].value) === 'PadBuilder'")
+                            
+                            select.form-control(v-model='fusetofoam', v-if="getOptionName(sections[index].value) === 'PadBuilder'")
+                              option(value='', selected) Select Smart Laminator
+                              option(value='SLFD') (Smart Laminator)(Face Down - Lift XXXXX-XXXX-Pad)
+                              option(value='SLFU') (Smart Laminator)(Face Up - Lift XXXXX-XXXX-Foam)
+
+                                                                      
+                        .form-group
+                          .col-sm-12
+                            a.btn.btn-primary.col-sm-2.pull-right(@click="[validatePrompt(index, $event), insertAction(index, sections[index].value, $event)]", style="margin-left: 10px") Apply
+                            a.btn.btn-danger.col-sm-2.pull-right(@click="cancelAddAction(index, $event)") Cancel
+
+
+                    div.form-group(:class="{'has-error': inputField.hasError}", v-if="inputField.type == 'checkbox' && ((!!inputField.display) ? true : inputField.display)")
+                      input(
+                        :id='inputField.title | html_safe_space_to_dash',
+                        type='checkbox',
+                        v-model='inputField.value',
+                        :checked='inputField.value',
+                        v-on:change='gluedToCaseChangedCheckBox(index, inputField, key)'
+                      )
+                      label(:for='inputField.title | html_safe_space_to_dash', style="margin-left:20px")
+                        | {{inputField.title}}
+
+                    div.form-group(:class="{'has-error': inputField.hasError}", v-if="inputField.type == 'select' && ((!!inputField.display) ? true : inputField.display)")
+                      label(:for='inputField.title | html_safe_space_to_dash')
+                        | {{inputField.title}}
+                        span.error-message(v-if="inputField.hasError")
+                          | {{inputField.errorMessage}}
+                      select.form-control.input-lg(
+                        :id='inputField.title | html_safe_space_to_dash',
+                        v-model="inputField.value",
+                        :disabled='inputField.disabled',
+                        v-on:change='materialChangedSelect(index, inputField, key)'
+                      )
+                        option(disabled, :selected="inputField.value == null", v-if="!inputField.customDefaultOption")
+                          | {{sharedState.pdSelectOne}}
+                        template(v-for="opt in inputField.options", track-by="$index")
+                          option(v-if="typeof opt === 'string'", :value="opt")
+                            | {{opt}}
+                          option(v-if="typeof opt === 'object'", :value="opt.value")
+                            | {{opt.name}}
+                      span.footer(v-if='inputField.footnote') {{inputField.footnote}}
+
+                    div.form-group(:class="{'has-error': inputField.hasError}", v-if="inputField.type == 'input' && ((!!inputField.display) ? true : inputField.display)")
+                      label(:for='inputField.title | html_safe_space_to_dash')
+                        | {{inputField.title}}
+                        span(v-if="inputField.title == 'Thickness' || inputField.title == 'Strap Length'")
+                          | &nbsp;(inches)
+
+                        span.error-message(v-if="inputField.hasError")
+                          | {{inputField.errorMessage}}
+                      input.form-control.input-lg(
+                        type='{{ inputField.inputType || "text" }}',
+                        :step="inputField.step",
+                        :placeholder='inputField.placeholder',
+                        v-model='inputField.value',
+                        :id='inputField.title | html_safe_space_to_dash',
+                        @keyup='[inputField.cb && inputField.cb.isFor == "keyup" ? inputField.cb.func() : "" , checkValuesAndMaybeValidate(index,key,true)]'
+                      )
+                      span.footer(v-if='inputField.footnote') {{inputField.footnote}}
+
+                    div.form-group(:class="{'has-error': inputField.hasError}", v-if="inputField.type == 'text-area' && ((!!inputField.display) ? true : inputField.display)")
+                      label(:for='inputField.title | html_safe_space_to_dash')
+                        | {{inputField.title}}
+                        span.error-message(v-if="inputField.hasError")
+                          | {{inputField.errorMessage}}
+
+                      span.count(v-if='inputField.maxNumberOfCharacters') {{inputField.value !== null ? inputField.value.length : 0}} / {{inputField.maxNumberOfCharacters}}
+                      textarea.form-control.input-lg( :maxlength="inputField.maxNumberOfCharacters || 100", rows="5", :placeholder='inputField.placeholder',v-model='inputField.value', :id='inputField.title | html_safe_space_to_dash', @keyup='[checkValuesAndMaybeValidate(index,key,true),checkNewLines($event,inputField.value)]')
+                      span.footer(v-if='inputField.footnote') {{inputField.footnote}}
+        .content(slot='footer', class="fixed-bottom")
+          div.row
+            div.text-center.col-xs-6
+              a.btn.btn-primary(@click="createPdf",@mouseover='validate(true)', :disabled='!exportPdfFormDataIsValid || openPrompts')
+                | Export PDF
+            div.text-center.col-xs-6
+              a.btn.btn-primary(@click="createDxf")
+                | Export DXF
+
+block scripts
+  script(type='text/javascript').
+    Vue.config.debug = true;
+    window.addEventListener("load", function(){
+      document.getElementById('loading-screen').style.display = 'none'
+    });
+    var currentUser = null;
+    if(!{user?true:false}) {
+      window.onbeforeunload = null;
+      currentUser = {
+        email: '!{user?user.email:null}',
+        username: '!{user?user.username:null}',
+        id:'!{user?user._id:null}',
+        gravatarURL: '!{user?user.gravatarURL:null}',
+        profile: !{user?JSON.stringify(user.profile):JSON.stringify({})},
+        isAdmin: !{user?user.isAdmin():false},
+        isAffiliate: !{user?user.isAffiliate():false},
+        isRep: !{user?user.isRep():false},
+        isLibrarian: !{user?user.isLibrarian():false},
+        isExporter: !{user?user.isExporter():false},
+        isUser: !{user?user.isUser():false},
+        currentStore: '!{user?user.currentStore():null}'
+      };
+    } else {
+      window.onbeforeunload = mcb.utils.confirmOnPageExit;
+    }
+
+    if ("#{unit}" === "inches" || "#{unit}" === "mm") {
+      mcb.editor.setCurrentUnit("#{unit}");
+    }
+
+    var appSettings = {
+      showGrid: !{JSON.stringify((user && user.appSettings) ? user.appSettings.showGrid : true)},
+      snapToGrid: !{JSON.stringify((user && user.appSettings) ? user.appSettings.snapToGrid : false)},
+      showDepthLabels: !{JSON.stringify((user && user.appSettings) ? user.appSettings.showDepthLabels : true)},
+      autoSnapShapes: !{JSON.stringify((user && user.appSettings) ? user.appSettings.autoSnapShapes : true)},
+      units: !{JSON.stringify((user && user.appSettings) ? user.appSettings.units : "inches")},
+      language: !{JSON.stringify((user && user.appSettings && user.appSettings.language) ? (user.appSettings.language||"en") : (lang||"en"))},
+      gridStep: !{JSON.stringify((user && user.appSettings) ? user.appSettings.gridStep : 0.5)},
+      nudgeSpacing: !{JSON.stringify((user && user.appSettings) ? user.appSettings.nudgeSpacing : 0.0625)},
+      defaultOptions: !{JSON.stringify((user && user.appSettings) ? user.appSettings.defaultOptions : [])}
+    };
+
+    var md = new MobileDetect(window.navigator.userAgent);
+    var lang = !{JSON.stringify(langFile)};
+
+    var caseData = {
+      store: !{JSON.stringify(store || null).replace(/<\//g, "<\\/")},
+      kase: !{JSON.stringify(kase || null).replace(/<\//g, "<\\/")},
+      currentDesign: !{JSON.stringify(design || null).replace(/<\//g, "<\\/")},
+      unit: "#{unit}",
+      betaMode: "#{betaMode}" === 'true',
+      caseCategories : !{JSON.stringify(caseCategories || null)},
+    };
+
+    if(!caseData.store) {
+      caseData.store = {"name":"MyCaseBuilder.com","ezID":"149"};
+    }
+    if(!caseData.kase){
+      caseData.kase = {"name":"PZ 4","mcbid":"pz4","width":13.1875,"length":24.5625,"totalDepth":3.875,"baseDepth":3.125,"borderWidth":0.75,"cornerRadius":0.25,"lowerWidth":13.1875,"lowerLength":24.5625,"outerRule":null,"available":true,"inCaseShapes":[]}
+    }
+
+    if(caseData.currentDesign === null){
+      caseData.currentDesign = {currentRev: {name:'', data: '[]'}, empty: true};
+    }
+    if(!currentUser){
+      currentUser = {z: false, anon: true}
+    }
+
+    if (!caseData.kase || !('baseDepth' in caseData.kase) || !('length' in caseData.kase) || !('width' in caseData.kase)) {
+      if (caseData.currentDesign && caseData.currentDesign.currentRev && caseData.currentDesign.currentRev.isCustom && caseData.currentDesign.currentRev.oldCustomData) {
+        caseData.currentDesign.currentRev.oldCustomData.split('|').forEach(function(part) {
+          var n = "" + part.slice(0,1);
+          var v = parseFloat(part.slice(1));
+          if (n.toLowerCase() === "l") {
+            caseData.kase.length = v;
+            caseData.kase.lowerLength = v;
+          }
+          if (n.toLowerCase() === "w") {
+            caseData.kase.width = v;
+            caseData.kase.lowerWidth = v;
+          }
+          if (n.toLowerCase() === "d") {
+            caseData.kase.baseDepth = v;
+            caseData.kase.totalDepth = v;
+          }
+        });
+        caseData.kase.cornerRadius = 0;
+      }
+    }
+
+
+ 

@@ -1,0 +1,498 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 #{stringHelper.toTitleCase(action)} Case
+
+  form.form-horizontal(role='form', method='POST', style='clear:both;')
+    input(type='hidden', name='_csrf', value=_csrf)
+    fieldset
+      .form-group
+        .col-md-4.col-md-offset-4
+          button.btn.btn-primary(type='submit')
+            i.fa.fa-floppy-o
+            | Save
+      .form-group
+        label.col-md-4.control-label(for='available')
+        .col-md-4
+          label.checkbox-inline(for='available')
+            input#available(type='checkbox', name='available', checked=(thisCase.available ? "checked" : undefined))
+            |       Available
+
+      .form-group
+        label.col-md-4.control-label(for='name') Name
+        .col-md-4
+          input#name.form-control.input-md(name='name', type='text', placeholder='Name', required='', value="#{thisCase.name || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='mcbid') MCB-ID
+        .col-md-4
+          input#mcbid.form-control.input-md(name='mcbid', type='text', placeholder='MCB-iD', required='', value="#{thisCase.mcbid || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='case_category') Case Category
+        .col-md-4
+          input#case_category.form-control.input-md(name='case_category', type='text', placeholder='Category', value='#{thisCase.categoryString ? thisCase.categoryString : ""}')
+      .form-group
+        label.col-md-4.control-label(for='case_brand') Case Brand
+        .col-md-4
+          input#case_brand.form-control.input-md(name='case_brand', type='text', placeholder='Brand', value='#{thisCase.brandString ? thisCase.brandString : ""}')
+
+      .form-group
+        label.col-md-4.control-label(for='length') Length
+        .col-md-4
+          input#length.form-control.input-md(name='length', type='text', placeholder='Length', required='', value="#{thisCase.length || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='width') Width
+        .col-md-4
+          input#width.form-control.input-md(name='width', type='text', placeholder='Width', required='', value="#{thisCase.width || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='lower_length') Lower Length
+        .col-md-4
+          input#lower_length.form-control.input-md(name='lower_length', type='text', placeholder='Lower Length', required='', value="#{thisCase.lowerLength || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='lower_width') Lower Width
+        .col-md-4
+          input#lower_width.form-control.input-md(name='lower_width', type='text', placeholder='Lower Width', required='', value="#{thisCase.lowerWidth || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='base_depth') Base Depth
+        .col-md-4
+          input#base_depth.form-control.input-md(name='base_depth', type='text', placeholder='Base Depth', required='', value="#{thisCase.baseDepth || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='total_depth') Total Depth
+        .col-md-4
+          input#total_depth.form-control.input-md(name='total_depth', type='text', placeholder='Total Depth', required='', value="#{thisCase.totalDepth || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='border_width') Border Width
+        .col-md-4
+          .input-group
+            input#border_width.form-control(name='border_width', placeholder='Border Width', type='text', required='', value="#{thisCase.borderWidth || ''}")
+            span.input-group-addon in.
+
+      .form-group
+        label.col-md-4.control-label(for='corner_radius') Corner Radius
+        .col-md-4
+          .input-group
+            input#corner_radius.form-control(name='corner_radius', placeholder='Corner Radius', type='text', required='', value="#{thisCase.cornerRadius || ''}")
+            span.input-group-addon in.
+          p.help-block The radius of the corner of the case in inches.
+
+      .form-group
+        label.col-md-4.control-label(for='outer_rule') Outer Rule
+        .col-md-4
+          input#outer_rule.form-control.input-md(name='outer_rule', type='text', placeholder='Outer Rule', value="#{thisCase.outerRule || ''}")
+
+      h3 Parts
+      if action === 'edit' && thisCase.parts.length
+        each part, index in thisCase.parts
+          .form-group.old-part-input
+            label.col-md-4.control-label(for='part'+(index+1))= 'Old Part Name '+ (index+1)
+            .col-md-4
+              input.form-control.input-md(id='part'+(index+1), name='old_parts['+part._id+']', type='text', placeholder='Part Name', required='', value=part.name)
+      else
+        .form-group.part-input
+          label.col-md-4.control-label(for='part1') Part Name 1
+          .col-md-4
+            input#part1.form-control.input-md(name='parts[0]', type='text', placeholder='Part Name', required='')
+
+      .form-group
+        label.col-md-4.control-label(for='add-part') Add Part
+        .col-md-4
+          a#add-part.btn.btn-default(href='#') Add Part
+
+      if thisCase.csCartProductIDs && thisCase.csCartProductIDs["USA"]["base"]["1"]
+        .form-group
+          label.col-md-4.control-label(for='cs-cart-pull') Pull CS Cart Case Feature Data
+          .col-md-4
+            span#cs-cart-pull.btn.btn-default(onclick='csCartPullCase()', disabled=false) Get case data from main product
+      else
+        .form-group
+          label.col-md-4.control-label(for='cs-cart-pull-features-and-data') Pull CS Cart Case Feature Data
+          .col-md-4
+            span#cs-cart-pull-features-and-data.btn.btn-default(onclick='csCartPullFeaturesAndData()', disabled=true) Get case data from main product
+
+      .form-group
+        label.col-md-4.control-label(for='cs-cart-get-product-ids') Get all product IDs from CS-Cart
+        .col-md-4
+          span#cs-cart-get-product-ids.btn.btn-default(onclick='csCartGetProductIDs()', disabled=true) Get CS-Cart Product IDs
+
+      .form-group
+        br
+        label.col-md-4.control-label CS-Cart Base Product ID (from USA)
+        .col-md-4
+          input#csCartBaseID.row.form-control.input-md(name='csCartBaseID', type='number', value='#{thisCase.csCartProductIDs ? thisCase.csCartProductIDs["USA"]["base"]["1"] : ""}')
+
+      each caseType in ['caseAndFoam', 'foamOnly']
+        .form-group
+          .row
+            label.col-md-4.control-label
+              | CS-Cart #{caseType === 'foamOnly' ? 'Foam Only' : 'Case and Foam'} Product IDs
+              br
+              br
+
+          each instance in csCartServerInstances
+            .row
+              .col-md-10.col-md-offset-2
+                blockquote(style="font-size: inherit;")
+                  .row
+                    .col-md-12
+                      h4.page-header(style="margin-top: -10px;")
+                        strong #{instance}
+                  if csCartStores[instance] && csCartStores[instance].stores
+                    each store in csCartStores[instance].stores
+                      .row
+                        label.col-md-4.control-label(for=('productID' + '-' + instance + '-' + caseType + '-' + store["company_id"])) #{store.company} - (Store ID #{store["company_id"]})
+                        .col-md-4
+                          input.form-control.input-md(id=('productID' + '-' + instance + '-' + caseType + '-' + store["company_id"]), name=('productID' + '-' + instance + '-' + caseType + '-' + store["company_id"]), type='number', value='#{thisCase.csCartProductIDs ? thisCase.csCartProductIDs[instance][caseType][store.company_id] : ""}')
+                      .row
+                        .col-md-4.col-md-offset-4(style="padding-top: .5em; padding-bottom: 1.25em; overflow-wrap: break-word;")
+                          em #{(store.mcb_ezIDs||[]).join(', ')}
+
+      if !csCart_error && csCart_product && (csCart_product.main_pair && csCart_product.main_pair.detailed ) && (typeof csCart_product.status === 'string' || csCart_product.status < 400)
+        .form-group
+          br
+          label.col-md-4.control-label(for='csCartMainImg') Main image from CS-Cart (USA)
+          .col-md-4
+            input#csCartMainImg.form-control.input-md(name='csCartMainImg', value='#{csCart_product.main_pair.detailed.image_path || ""}')
+            img(src='#{csCart_product.main_pair.detailed.image_path}', style='width: 100%;')
+
+      .form-group
+        .col-md-4.col-md-offset-4
+          button.btn.btn-primary(type='submit')
+            i.fa.fa-floppy-o
+            | Save
+
+  hr
+
+  .modal.fade#new-category-modal(tabindex='-1', role='dialog')
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type='button', data-dismiss='modal', aria-label='Close')
+            span(aria-hidden='true') ×
+          h4.modal-title New Case Category
+        .modal-body
+          form.form-horizontal
+            input(type='hidden', name='_csrf', value=_csrf)
+            fieldset
+              .form-group
+                label.col-md-4.control-label(for='case_category_name') Name
+                .col-md-4
+                  input#case_category_name.form-control.input-md(name='case_category_name', type='text', placeholder='Name', required='')
+
+        .modal-footer
+          button.btn.btn-default(type='button', data-dismiss='modal') Close
+          button.btn.btn-primary#add-category(type='button')
+            i.fa.fa-plus
+            | Add Category
+
+block scripts
+  script(type='text/javascript', src='/js/case-category.js')
+  script(type='text/javascript', src='/js/case.js')
+  script.
+    var fillInCsCartProductIDs = function(data) {
+      // Parse the data keys,
+      // fill in the proper fields above,
+      // and issue a warning on what changed.
+
+      /*
+        NOTE -- data comes back from csCartGetProductIDs() in
+        the following format:
+
+          {
+            "[CS Cart server code]_[CS Cart store ID]": [
+              {
+                product_id: "25",
+                product_code: "p1120-cf"
+              },
+              {
+                ...
+              },
+              ...
+            ],
+            ...
+          }
+
+      */
+
+      /*
+        Also note -- the format for the input ids above is:
+
+          id="productID-[CS Cart server code]-[case type]-[CS Cart store ID]"
+
+        e.g.:
+
+          <input id="productID-EUR-caseAndFoam-5" .../>
+
+      */
+
+      var changes = [];
+
+      Object.keys(data).forEach(function(dataKey) {
+        if (data.hasOwnProperty(dataKey)) {
+          if (dataKey.indexOf('_') !== -1) {
+            var serverInstancePart = dataKey.split('_')[0];
+            var storeIdPart = dataKey.split('_')[1];
+
+            data[dataKey].forEach(function(product) {
+              var lastThreeChars = product.product_code.slice(-3);
+              var inputEl;
+              var originalValue;
+
+              // Note -- the caseType strings are hard-coded in a few different places.
+              // Not great, but works for now.
+              if (lastThreeChars === '-cf') {
+
+                inputEl = document.getElementById(
+                  'productID' +
+                  '-' +
+                  serverInstancePart +
+                  '-' +
+                  'caseAndFoam' +
+                  '-' +
+                  storeIdPart
+                );
+
+                if (inputEl) {
+                  originalValue = inputEl.value ? inputEl.value : 'NONE';
+                  inputEl.value = product.product_id;
+
+                  if (originalValue !== inputEl.value) {
+                    changes.push(
+                      '\nChanged ' +
+                      serverInstancePart +
+                      ' store ' +
+                      storeIdPart +
+                      ' case and foam product ID from ' +
+                      originalValue +
+                      ' to ' +
+                      inputEl.value);
+                  }
+                }
+
+              } else if (lastThreeChars === '-fo') {
+
+                inputEl = document.getElementById(
+                  'productID' +
+                  '-' +
+                  serverInstancePart +
+                  '-' +
+                  'foamOnly' +
+                  '-' +
+                  storeIdPart
+                );
+
+                if (inputEl) {
+                  originalValue = inputEl.value ? inputEl.value : 'NONE';
+                  inputEl.value = product.product_id;
+
+                  if (originalValue !== inputEl.value) {
+                    changes.push(
+                      '\nChanged ' +
+                      serverInstancePart +
+                      ' store ' +
+                      storeIdPart +
+                      ' foam only product ID from ' +
+                      originalValue +
+                      ' to ' +
+                      inputEl.value);
+                  }
+                }
+
+              } else if (lastThreeChars.indexOf('-') === -1) {
+
+                // NOTE: This is only executed in the special
+                // case for base product_id (at USA_1 only), and
+                // when there is no hyphen in the last three characters.
+                if (dataKey === 'USA_1') {
+                  inputEl = document.getElementById('csCartBaseID');
+
+                  if (inputEl) {
+                    originalValue = inputEl.value ? inputEl.value : 'NONE';
+                    inputEl.value = product.product_id;
+
+                    if (originalValue !== inputEl.value) {
+                      changes.push(
+                        '\nChanged base product ID from ' +
+                        originalValue +
+                        ' to ' +
+                        inputEl.value);
+                    }
+                  }
+                }
+
+              }
+            });
+
+          }
+        }
+      });
+
+      if (changes.length > 0) {
+        alert(changes);
+      } else {
+        alert('No product IDs changed.');
+      }
+    };
+
+    var isGettingProductIDs = false;
+    var csCartGetProductIDs = function() {
+      if (!isGettingProductIDs) {
+        isGettingProductIDs = true;
+
+        var csCartStores = !{JSON.stringify(csCartStores)};
+        var thisCase = !{JSON.stringify(thisCase)};
+
+        var mcbid;
+        if (!thisCase || !thisCase.mcbid) {
+          mcbid = $('#mcbid').val() || undefined;
+        } else {
+          mcbid = thisCase.mcbid;
+        }
+
+        /*
+          NOTE: we should pass an object in the following format to
+          our request query:
+
+          {
+            EUR: [ 1, 5 ],
+            USA: [ 1 ]
+          }
+
+        */
+        var minimalStoreIds = {};
+        Object.keys(csCartStores).forEach(function (key) {
+          if (csCartStores.hasOwnProperty(key)) {
+            var storeIdArr = [];
+
+            if (csCartStores[key].stores && csCartStores[key].stores.length > 0) {
+              csCartStores[key].stores.forEach(function (store) {
+                if (store.company_id) {
+                  storeIdArr.push(store.company_id);
+                }
+              });
+            }
+
+            minimalStoreIds[key] = storeIdArr;
+          }
+        });
+
+        $.ajax({
+          type: 'GET',
+          url: '/cases/' + mcbid + '/get-product-codes',
+          data: {
+            storeIds: minimalStoreIds
+          },
+          success: function (data) {
+            fillInCsCartProductIDs(data);
+            isGettingProductIDs = false;
+          },
+          error: function (xhr) {
+            console.error(xhr.responseText);
+            alert('There was a server-side error when getting product codes.');
+            isGettingProductIDs = false;
+          }
+        });
+      }
+    };
+
+    var productFeatures;
+    if (!{JSON.stringify(csCart_product_features)}) {
+
+      // NOTE: csCart_product_features defaults to the USA product for now.
+      productFeatures = !{JSON.stringify(csCart_product_features)};
+
+    }
+
+    // NOTE: productFeatures should first be set via one of the two above methods.
+    var csCartPullCase = function () {
+      // STEVE disable 3/25/2021
+      return;
+      productFeatures.forEach(function (feature) {
+        switch (feature.description) {
+          /* NOTES:
+              - The " (inches)" suffix is a hard-coded, hidden feature on CS-Cart
+                which contains the inches number w/out extraneous description.
+              - CS-Cart, seemingly arbitrarily, puts the features' numeric values in
+                either "value" or "value_int" field. So we have to check for it in both places.
+          */
+          case 'Length (inches)':
+            $('#length').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Width (inches)':
+            $('#width').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Lower Length (inches)':
+            $('#lower_length').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Lower Width (inches)':
+            $('#lower_width').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Base Depth (inches)':
+            $('#base_depth').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Total Depth (inches)':
+            $('#total_depth').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Border Width (inches)':
+            $('#border_width').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Corner Radius (inches)':
+            $('#corner_radius').val(feature.value_int ? feature.value_int : feature.value);
+            break;
+          case 'Outer Rule':
+            $('#outer_rule').val(feature.value);
+            break;
+          case 'Category':
+            $('#case_category').val(feature.variants[feature.variant_id].variant);
+            break;
+          case 'Brand':
+            $('#case_brand').val(feature.variants[feature.variant_id].variant);
+            break;
+          default:
+          // ...
+        }
+      });
+    };
+
+    var csCartPullFeaturesAndData = function () {
+      // STEVE disable 3/25/2021
+      return;
+      var baseId = $('#csCartBaseID').val();
+
+      if (!baseId) {
+        alert('You need to first fill in a base product ID to get the product data.');
+        return;
+      }
+
+      var mcbid = $('#mcbid').val() || undefined;
+
+      // First, get the missing product features.
+      // getProductFeaturesJSON
+      $.ajax({
+        type: 'GET',
+        url: '/cases/' + mcbid + '/get-product-features',
+        data: {
+          baseProductID: baseId,
+          lang: 'en',
+        },
+        success: function (data) {
+
+          productFeatures = data;
+
+          // Then, pull data like normal.
+          csCartPullCase();
+
+        },
+        error: function (xhr) {
+          console.error(xhr.responseText);
+          alert('There was a server-side error when getting product features.');
+        }
+      });
+    }

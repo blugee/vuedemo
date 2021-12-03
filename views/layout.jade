@@ -1,0 +1,62 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='X-UA-Compatible', content='IE=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='csrf-token', content=_csrf)
+    title #{title} - MyCaseBuilder
+    link(href='https://fonts.googleapis.com/css?family=Lato:400,700,300' rel='stylesheet' type='text/css')
+    link(rel='stylesheet', href='/css/main.css?v=#{releaseVersion}')
+
+    script(src='/js/errors.js')
+
+    script(src='/js/lib/jquery-2.2.0.min.js')
+    script(src='/js/lib/bootstrap.min.js')
+    script(src='/js/lib/underscore.js')
+    script(src='/js/lib/select2.min.js')
+    script(src='/js/lib/bootbox.js')
+
+    block headScripts
+
+  body
+    include partials/header
+
+    .container
+      include partials/flash
+      block content
+
+    include partials/footer
+    block hidden
+    script(src='/js/lib/blob-stream.js')
+    script(src='/js/main.js?v=#{releaseVersion}')
+
+    block scripts
+
+    script(type='text/javascript').
+      var currentUser = {
+        email: '!{user?user.email:null}',
+        username: '!{user?user.username:null}',
+        id:'!{user?user._id:null}',
+        gravatarURL: '!{user?user.gravatarURL:null}',
+        isAdmin: !{user?user.isAdmin():false},
+        isAffiliate: !{user?user.isAffiliate():false},
+        isRep: !{user?user.isRep():false},
+        isLibrarian: !{user?user.isLibrarian():false},
+        isExporter: !{user?user.isExporter():false},
+        isUser: !{user?user.isUser():false},
+        currentStore: '!{user?user.currentStore():null}'
+      };
+
+    script(type='text/javascript').
+      if (typeof window.mcb === 'object') Rollbar.options.payload.custom.mcb = window.mcb;
+      if (typeof window.currentUser === 'object') Rollbar.options.payload.person = window.currentUser;
+
+    // Google Analytics: change UA-28716132-1 to be your site's ID
+    script.
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-28716132-1', 'auto');
+      ga('send', 'pageview');

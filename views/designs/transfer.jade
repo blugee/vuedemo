@@ -1,0 +1,81 @@
+extends ../layout
+
+block content
+
+  - design = design || {}
+  - design.owners = design.owners || []
+  - design.revisions = design.revisions || []
+
+  - revision = revision || {}
+  - revision.layers = revision.layers || []
+
+  .page-header
+    h3 Transfer Project
+  .container
+    .row
+      .col-sm-6
+        .blockquote
+          p
+            strong Name:
+            | &nbsp; #{design.name}
+
+          p
+            strong uniqueID:
+            | &nbsp; #{design.uniqueID}
+          p
+            if design.isTemplate && !design.owners[0]
+              strong isTemplate: TRUE
+            else
+              strong Owner:
+              | &nbsp; #{design.owners[0] && design.owners[0].email}
+          p
+            strong Revisions:
+            | &nbsp; #{design.revisions.length}
+          p
+            strong Created:
+            | &nbsp; #{design.createdAt}
+          p
+            strong Updated:
+            | &nbsp; #{design.updatedAt}
+      .col-sm-6(style="min-height:#{design.revisions.length*75+100}px")
+        h4.text-right(style="margin-top:0") Designs
+        .pull-right(style="position:relative")
+          - X = 0
+          each revision in design.revisions
+            div(style="position:absolute;width:275px;height:175px;top:#{X*75}px;right:#{X*75}px;background:url(#{revision.snapshot}) top center no-repeat;background-size: contain; background-color: #fff; display: flex; align-items: center; justify-content: start; flex-direction: column")
+              h5 #{revision.fileID} / #{revision.name}
+            - X++
+
+
+  .page-header
+
+  if design.uniqueID
+    form.form-horizontal(role='form', method='POST')
+      input(type='hidden', name='_csrf', value=_csrf)
+      fieldset
+        .form-group
+          .col-md-4
+            input.form-control.input-md(name='uniqueID', type='hidden', value='#{design.uniqueID}')
+        .form-group
+          label.col-md-4.control-label(for='email') New owner&apos;s email
+          .col-md-4
+            input.form-control.input-md(name='email', type='text', placeholder='Email address', required=true)
+        .form-group
+          .col-md-4.col-md-offset-4
+            button.btn.btn-primary.pull-right(type='submit')
+              i.fa.fa-floppy-o
+              | Apply
+
+  if !!message
+    if !!success
+      .panel.panel-success
+        .panel-body
+          p #{message}
+    else
+      .panel.panel-danger
+        .panel-body
+          p #{message}
+  esle
+    .panel.panel-default
+      .panel-body
+        p Transfer ownership of a design to a different user.

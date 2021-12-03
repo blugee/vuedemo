@@ -1,0 +1,28 @@
+extends ../layout
+
+block content
+  .page-header
+    .row
+      .col-xs-3.col-md-2
+        .thumbnail
+          img(src=thisUser.gravatarURL)
+
+    h3= thisUser.email
+
+   dl.dl-horizontal
+    dt Name:
+    if thisUser.profile.name
+      dd=thisUser.profile.name
+    else
+      dd='?'
+    dt Gender:
+    if thisUser.profile.gender
+      dd=thisUser.profile.gender
+    else
+     dd='?'
+    dt Location:
+    if thisUser.profile.location
+     dd=thisUser.profile.location
+    else
+     dd='?'
+

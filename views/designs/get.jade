@@ -1,0 +1,85 @@
+extends ../layout
+
+block content
+  - var layers = (revision.layers || []).filter(function(l){return l.isLid !== 'true'})
+  - var store = (revision.store) ? revision.store : {}
+  - var kase = (revision['case']) ? revision['case'] : {}
+  - var owner = (Array.isArray(design.owners) && design.owners.length) ? design.owners[0].email : ''
+
+  .page-header
+    h3 Design
+
+  .pull-right(style="height:0")
+    image(src="#{revision.snapshot}", style="max-width:500px;max-height:175px;")
+
+  form.form-horizontal(method='POST')
+    input(type='hidden', name='_csrf', value=_csrf)
+
+    .form-group
+      label.col-sm-1 Name
+      .col-sm-4
+        input.form-control(name="name", value="#{revision.name}")
+
+    .form-group
+      label.col-sm-1 fileID
+      .col-sm-4
+        input.form-control(value="#{revision.fileID}", readonly)
+
+    .form-group
+      label.col-sm-1 Store &nbsp;
+      .col-sm-4
+        input.form-control(name="store", value="#{store.ezID||''}")
+      if (store.name)
+        i (#{store.name})
+
+    .form-group
+      label.col-sm-1 Case &nbsp;
+      if (revision.isCustom)
+        .col-sm-4
+          input.form-control(value="Custom Foam Only", readonly)
+      else
+        .col-sm-4
+          input.form-control(name="case", value="#{kase.mcbid||''}")
+        if (kase.name)
+          i (#{kase.name})
+
+    .form-group
+      label.col-sm-1 Owner
+      .col-sm-4
+        input.form-control(value="#{owner}", readonly)
+      a.btn.btn-success(href='/designs/#{revision._id}/transfer')
+        i.fa.fa-users
+        | Transfer
+
+    .form-group
+      label.col-sm-1 Trays
+      .col-sm-4
+        input.form-control(value="#{layers.length}", readonly)
+
+    .form-group
+      label.col-sm-1 Created
+      .col-sm-6
+        input.form-control(value="#{revision.createdAt}", readonly)
+
+    .form-group
+      label.col-sm-1 Updated
+      .col-sm-6
+        input.form-control(value="#{revision.updatedAt}", readonly)
+
+    .page-header
+
+    button.btn.btn-primary(type='submit')
+      i.fa.fa-floppy-o
+      | Apply
+
+    if !!message
+      if !!success
+        .alert.alert-success.alert-dismissible(role="alert")
+          button.close(data-dismiss="alert", aria-label="Close")
+            span(aria-hidden="true") &times;
+          | Success: #{message}
+      else
+        .alert.alert-danger.alert-dismissible(role="alert")
+          button.close(data-dismiss="alert", aria-label="Close")
+            span(aria-hidden="true") &times;
+          | Error: #{message}

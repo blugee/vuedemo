@@ -1,0 +1,69 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 #{stringHelper.toTitleCase(action)} Cart
+
+  form.form-horizontal(role='form', method='POST', style='clear:both;')
+    input(type='hidden', name='_csrf', value=_csrf)
+    fieldset
+      .form-group
+        label.col-md-4.control-label(for='region') Region
+        .col-md-4
+          input#region.form-control.input-md(name='region', type='text', placeholder='Region', required='required', value="#{cart.region || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='currency') Currency
+        .col-md-4
+          input#currency.form-control.input-md(name='currency', type='text', placeholder='Currency', required='required', maxlength="1", value="#{cart.currency || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='baseURL') API Base URL
+        .col-md-4
+          input#baseURL.form-control.input-md(name='baseURL', type='url', placeholder='https://api.example.com', required='required', value="#{cart.baseURL || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='apiUser') API Username
+        .col-md-4
+          input#apiUser.form-control.input-md(name='apiUser', type='email', placeholder='user@example.com', required='required', value="#{cart.apiUser || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='apiKey') API Key
+        .col-md-4
+          input#apiKey.form-control.input-md(name='apiKey', type='text', placeholder='****************', required='required', value="#{cart.apiKey || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='xAuthToken') Public X-Auth-Token
+        .col-md-4
+          input#xAuthToken.form-control.input-md(name='xAuthToken', type='text', placeholder='****************', required='required', value="#{cart.xAuthToken || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='emailSendTime') Default email delivery Time-Of-Day (24hr format)
+        .col-md-4
+          input#emailSendTime.form-control.input-md(name='emailSendTime', type='text', placeholder='22', required='required', value="#{cart.emailSendTime || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='timeZone') Timezone
+        .col-md-4
+          input#timeZone.form-control.input-md(name='timeZone', type='text', placeholder='America/Phoenix', required='required', value="#{cart.timeZone || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='created') Created
+        .col-md-4
+          input#created.form-control.input-md(name='created', type='text', readonly='readonly', disabled, value="#{cart.createdAt || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='updated') Updated
+        .col-md-4
+          input#updated.form-control.input-md(name='updated', type='text', readonly='readonly', disabled, value="#{cart.updatedAt || ''}")
+
+      .form-group
+        .col-md-4.col-md-offset-4
+          button.btn.btn-primary(type='submit')
+            i.fa.fa-floppy-o
+            | Save
+          a.btn.btn-default.pull-right(href="/carts")
+            i.fa.fa-close
+            | Cancel
+
+block scripts

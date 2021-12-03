@@ -1,0 +1,25 @@
+.ui.menu
+  .header.item MyCaseBuilder
+  a.item(href='/', class=title=='Home'?'active':undefined) Home
+  if user && user.isAdmin()
+    a.item(href='/users') Users
+  if user && user.isAdmin()
+    a.item(href='/cases') Cases
+  if user && user.isAdmin()
+    a.item(href='/stores') Stores
+  a.item(href='/contact', class=title=='Contact'?'active':undefined) Contact
+  .right.menu
+    if !user
+      a.item(href='/login', class=title=='Login'?'active':undefined) Login
+      a.item(href='/signup', class=title=='Create Account'?'active':undefined) Create Account
+    else
+      .ui.simple.dropdown.item
+        if user.profile.picture
+          img.ui.avatar.image(src='#{user.profile.picture}')
+        else
+          img.ui.avatar.image(src='#{user.gravatar(60)}')
+          span #{user.profile.name || user.email || user.id}&nbsp;
+        i.dropdown.icon
+        .menu
+          a.item(href='/account') My Account
+          a.item(href='/logout') Logout

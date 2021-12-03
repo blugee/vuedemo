@@ -1,0 +1,154 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 #{stringHelper.toTitleCase(action)} Store
+
+  form.form-horizontal(role='form', method='POST')
+    input(type='hidden', name='_csrf', value=_csrf)
+    fieldset
+      .form-group
+        label.col-md-4.control-label(for='name') MCB 1.0 ID
+        .col-md-4
+          input#ezid.form-control.input-md(name='ezID', type='text', placeholder='MCB 1.0 ID', required='', value="#{store.ezID || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='name') Name
+        .col-md-4
+          input#name.form-control.input-md(name='name', type='text', placeholder='Name', required='', value="#{store.name || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='regionalAffiliate') Is a Regional Affiliate
+        .col-md-4
+          // hidden input = the unchecked value
+          input#regionalAffiliate.checkbox(type='hidden', name='isRegionalParent', value='true')
+          if(store.isRegionalParent == false)
+            input#regionalAffiliate.checkbox(type='checkbox', checked, name='isRegionalParent', value='false')
+          else
+            input#regionalAffiliate.checkbox(type='checkbox', name='isRegionalParent', value='true')
+
+      .form-group
+        label.col-md-4.control-label(for='cases') Cases
+        .col-md-4
+          select#cases.form-control(name='cases', multiple='multiple')
+            each thisCase in cases
+              option(selected=thisCase.selected, value=thisCase._id) #{thisCase.name} (#{thisCase.mcbid})
+      .form-group(hidden=action === "new")
+        div.col-md-2.col-md-offset-4
+          .btn.btn-default(type='button', onclick='showCopyCasesToStore(true)')
+            | Import cases from store
+
+      .form-group
+        label.col-md-4.control-label(for='checkoutURL') Checkout URL
+        .col-md-4
+          input#checkoutUrl.form-control.input-md(name='checkoutURL', type='url', placeholder='https://www.mycasebuilder.com', value="#{store.checkoutURL || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='logoURL') Logo URL
+        .col-md-4
+          input#logoURL.form-control.input-md(name='logoURL', type='url', placeholder='https://www.mycasebuilder.com', value="#{store.logoURL || ''}")
+
+      .form-group
+        label.col-md-4.control-label(for='hasCustomLogo') Custom logo?
+        .col-md-1
+          if(store.hasCustomLogo)
+            input#hasCustomLogo.form-control.checkbox(checked, name='hasCustomLogo', type='checkbox')
+          else
+            input#hasCustomLogo.form-control.checkbox(name='hasCustomLogo', type='checkbox')
+        .col-md-3
+          input#logoImgWidth.form-control.input-md(name='logoImgWidth', type='text', value='#{store.logoImgWidth || "60px"}', placeholder='60px')
+      .form-group
+        .col-md-4.col-md-offset-4
+          input#logoImg.form-control.input-md(name='logoImg', type='text', value='#{store.logoImg || ""}', placeholder='/imgs/logos/store-#{store.ezID}-logo.svg')
+
+      .form-group
+        label.col-md-4.control-label(for='adminEmail') Admin email
+        .col-md-4
+          input#adminEmail.form-control.input-md(name='adminEmail', type='email', placeholder='steven@csfoam.com', value="#{store.adminEmail || ''}")
+      .form-group
+        label.col-md-4.control-label(for='shouldEmailAdmin') Email admin when a user clicks "order"
+        .col-md-4
+          if(store.shouldEmailAdmin == true)
+            input#shouldEmailAdmin.checkbox(type='checkbox', checked, name='shouldEmailAdmin')
+          else
+            input#shouldEmailAdmin.checkbox(type='checkbox', name='shouldEmailAdmin')
+
+      .form-group
+        br.col-md-4
+        label.col-md-4.control-label(for='estDaysToShip') Minimum Days to Ship (Business Days)
+        .col-md-4
+          input#estDaysToShip.form-control.input-md(name='estDaysToShip', type='number', placeholder='12', value='#{store.estDaysToShip || ""}')
+
+      .form-group
+        br.col-md-4
+        label.col-md-4.control-label(for='csCartServerInstance') CS Cart Server Instance
+        .col-md-4
+          select#csCartServerInstance.form-control(name='csCartServerInstance')
+            each instance in csCartServerInstances
+              option(value=instance, selected=store.csCartServerInstance === instance) #{instance}
+
+      .form-group
+        br.col-md-4
+        label.col-md-4.control-label(for='csCartID') CS Cart Store ID Number
+        .col-md-4
+          input#csCartID.form-control.input-md(name='csCartID', type='number', placeholder='CS Cart Store ID', value='#{store.csCartID || ""}')
+
+      .form-group
+        .col-md-4.col-md-offset-4
+          button.btn.btn-primary(type='submit')
+            i.fa.fa-floppy-o
+            | Save
+
+  #copy-cases-to-store.col-md-8.col-md-offset-2.hidden
+    form.form-horizontal(role='form')
+      input(type='hidden', name='_csrf', value=_csrf)
+      input(type='hidden', name='currentStoreId', value=store._id)
+      h3(slot='header')
+        | Copy cases from another store
+      .content(slot='body')
+        fieldset
+          .form-group
+            select.form-control(name='stores')
+              each thisStore in stores
+                option(value=thisStore._id) #{thisStore.name} (#{thisStore.ezID})
+      p(slot='footer')
+        .form-group
+          .col-md-4.col-md-offset-4
+            button.btn.btn-primary(type='submit')
+              | Copy this store's cases
+            span.btn.btn-default(onclick='showCopyCasesToStore(false)')
+              | Cancel
+
+block scripts
+  script(type='text/javascript', src='/js/store.js')
+  script.
+    var showCopyCasesToStore = function(shouldShow) {
+      shouldShow ?
+        $('#copy-cases-to-store').removeClass('hidden') :
+        $('#copy-cases-to-store').addClass('hidden');
+    };
+
+    $('#copy-cases-to-store form').submit(function (e) {
+      e.preventDefault();
+
+      var _csrf = $('#copy-cases-to-store form input[name="_csrf"]').val();
+      var currentStoreId = $('#copy-cases-to-store form input[name="currentStoreId"]').val();
+      var selectedStore = $('#copy-cases-to-store form select[name="stores"]').val();
+
+      $.ajax({
+        type: 'POST',
+        url: '/stores/edit/' + currentStoreId + '/copy-cases',
+        data: {
+          _csrf: _csrf,
+          currentStore: currentStoreId,
+          selectedStore: selectedStore
+        },
+        success: function() {
+          window.location.reload(true);
+        },
+        error: function() {
+          alert('There was a server-side error when attempting to copy')
+        }
+      });
+      return false;
+    });

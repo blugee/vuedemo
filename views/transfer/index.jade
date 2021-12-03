@@ -1,0 +1,35 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 Transfer a design
+
+    if success
+      .panel.panel-success
+        .panel-body
+          p #{message}
+    else if message
+      .panel.panel-danger
+        .panel-body
+          p #{message}
+
+    form.form-horizontal(role='form', method='POST')
+      input(type='hidden', name='_csrf', value=_csrf)
+      fieldset
+        .form-group
+          label.col-md-4.control-label(for='uniqueID') Design's uniqueID
+          .col-md-4
+            input.form-control.input-md(name='uniqueID', type='text', placeholder='Unique ID', required=true)
+        .form-group
+          label.col-md-4.control-label(for='email') New user's email
+          .col-md-4
+            input.form-control.input-md(name='email', type='text', placeholder='Email address', required=true)
+
+        .form-group
+          .col-md-4.col-md-offset-4
+            button.btn.btn-primary(type='submit')
+              i.fa.fa-floppy-o
+                | Transfer
+  .panel.panel-default
+    .panel-body
+      p Transfer ownership of a design to a different user.

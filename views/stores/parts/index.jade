@@ -1,0 +1,112 @@
+extends ../../layout
+
+block content
+  .page-header.parts-list
+    if isAdmin
+      .pull-right
+        a.btn.btn-success(href='/stores/new') New Store
+    h3=store.name + ' Parts and Prices'
+    .panel.panel-default
+      .panel-body
+        h4 Existing Parts
+        form.form(role='search')
+          .form-group
+            input#search-parts.form-control(type='text', placeholder='Search')
+        ul#parts-list.list-unstyled
+          each price in store.prices
+            li
+              span=price.part.name + ' (' + price.part.case.name + ')'
+              .pull-right
+                a.btn.btn-default.btn-xs(href='/stores/#{store._id}/parts/#{price._id}', data-method='delete', data-csrf=_csrf, data-message='This part has been removed from your store.', data-message-error='Network error. Unable to delete this part from your store at this time.') 
+                  span.hidden-xs Remove
+                  span.hidden-sm.hidden-md.hidden-lg
+                    i.fa.fa-times
+              .pull-right
+                input.form-control.input-xs.hidden-xs(type='text', value=price.value, data-type-timer, data-url='/stores/#{store._id}/parts/#{price._id}')
+                a.btn.btn-default.btn-xs.options(href='/stores/#{store._id}/options/#{price._id}')
+                  span.hidden-xs options
+                  span.hidden-sm.hidden-md.hidden-lg opts
+                a.btn.btn-default.btn-xs.price-availability(href='/stores/#{store._id}/parts/#{price._id}', data-available=(price.available | 0))=price.availability()
+              .options-list
+                .pull-right
+                  a.btn.btn-success.btn-xs.new-option(href='/stores/#{store._id}/prices/#{price._id}/options/new') New Option
+                h5 Options List
+                table.table.current-options-list
+                  thead
+                    th Name
+                    th Type
+                    th Choices
+                    th Active
+                    th Actions
+                  tbody
+                  tfoot
+                    th Name
+                    th Type
+                    th Choices
+                    th Active
+                    th Actions
+
+    .panel.panel-default
+      .panel-body
+        h4 All Available Parts
+        form.form(role='search')
+          .form-group
+            input#search-all-parts.form-control(type='text', placeholder='Search')
+        ul#full-parts-list.list-unstyled
+          each thisCase in store.cases
+            each thisPart in thisCase.parts
+              li
+                span=thisPart.name + ' (' + thisCase.name + ')'
+                .pull-right
+                  a.btn.btn-default.btn-xs.add-part(href='/stores/#{store._id}/parts/#{thisPart._id}', data-method='post', data-csrf=_csrf, data-message='This part has been added to your store.', data-message-error='Network error. Unable to add this part to your store at this time.', data-message-server, data-remove='false') Add
+
+block hidden
+  .hidden-elements.hidden
+    div.case-options-form
+      form.form-horizontal
+        fieldset
+          input(type='hidden', name='_csrf', value=_csrf)
+          .form-group
+            label.col-md-4.control-label(for='option-name') Option Name
+            .col-md-4
+              input.form-control.input-md(name='option-name', type='text', placeholder='Option Name', required='')
+          .form-group
+            label.col-md-4.control-label(for='option-type') Option Type
+            .col-md-4
+              select.form-control(name='option-type')
+                each option in options
+                  option(value=option) #{option}
+          .form-group
+            label.col-md-4.control-label(for='help-text') Help Text
+            .col-md-4
+              textarea.form-control(name='help-text')
+          .form-group
+            .col-md-4.col-md-offset-4
+              label.checkbox-inline
+                input(type='checkbox', name='option-active')
+                |       Active
+
+    div.add-choice-form
+      form.form-horizontal
+        fieldset
+          .form-group.duplicate-me
+            .col-md-4
+              input.form-control.input-md(id='variants-name$$', name='variants-name[$$]', type='text', placeholder='Name %%')
+            .col-md-4
+              input.form-control.input-md(id='variants-modifier$$', name='variants-modifier[$$]', type='text', placeholder='Modifier %%')
+            .col-md-2
+              select.form-control(name='variants-modifier-type[$$]')
+                option(value='money') $
+                option(value='percent') %
+            .col-md-2
+              label.checkbox-inline
+                input(type='hidden', name='variants-active[$$]', value='false')
+                input.active-checkbox(type='checkbox', name='variants-active[$$]', value='true')
+                |       Active
+
+          .form-group
+            .col-md-4
+              button#add-choice.btn.btn-default(name='add-choice') Add
+
+block scripts
+  script(type='text/javascript', src='/js/parts.js')

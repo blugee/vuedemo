@@ -1,0 +1,10 @@
+{
+  "nodeVersion": "system",
+  "viewportWidth": 1920,
+  "viewportHeight": 1080,
+  "video": false,
+  "env": {
+    "host": "localhost",
+    "port": 3000
+  }
+}

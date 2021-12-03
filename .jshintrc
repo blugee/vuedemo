@@ -1,0 +1,7 @@
+{
+  "node": true,
+  "globals": {
+    "rollbar": true
+  },
+  "esversion": 7
+}
